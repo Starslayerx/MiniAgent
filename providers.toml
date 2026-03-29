@@ -1,0 +1,15 @@
+provider = 'dashscope'
+
+[providers.dashscope]
+base_url = 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
+
+[providers.dashscope.model]
+primary = 'qwen3.5-397b-a17b'
+light = 'qwen3.5-122b-a10b'
+
+[providers.deepseek]
+base_url = 'https://api.deepseek.com'
+
+[providers.deepseek.model]
+primary = 'deepseek-reasoner'
+light = 'deepseek-chat'
