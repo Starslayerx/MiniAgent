@@ -1,6 +1,7 @@
 provider = 'dashscope'
 
 [providers.dashscope]
+api_key = 'sk-***'
 base_url = 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
 
 [providers.dashscope.model]
@@ -8,6 +9,7 @@ primary = 'qwen3.5-397b-a17b'
 light = 'qwen3.5-122b-a10b'
 
 [providers.deepseek]
+api_key = 'sk-***'
 base_url = 'https://api.deepseek.com'
 
 [providers.deepseek.model]
