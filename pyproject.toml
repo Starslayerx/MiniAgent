@@ -1,0 +1,13 @@
+[project]
+name = "learnclaudecode"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "httpx[socks]>=0.28.1",
+    "openai>=2.30.0",
+    "pydantic-settings>=2.13.1",
+    "pytest>=9.0.2",
+]
