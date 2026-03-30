@@ -1,4 +1,3 @@
-import aiofiles
 from pathlib import Path
 
 

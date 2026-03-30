@@ -14,4 +14,4 @@ base_url = 'https://api.deepseek.com'
 
 [providers.deepseek.model]
 primary = 'deepseek-reasoner'
-light = 'deepseek-chat'
+light = 'deepseek-reasoner'
