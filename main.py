@@ -2,13 +2,13 @@ import json
 import asyncio
 from openai import AsyncOpenAI
 
-from tools import TOOLS, run_bash
-from paths import USER_DIR
+from tools import TOOLS, TOOL_HANDLERS, run_bash
+from paths import WORKDIR
 from settings import Settings, ProviderConfig
 
 
 async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: list):
-    init_system_message = f"You are a coding agent at {USER_DIR}. Use bash to solve tasks. Act, don't explain."
+    init_system_message = f"You are a coding agent at {WORKDIR}. Use bash to solve tasks. Act, don't explain."
 
     response = await client.responses.create(
         model=provider.model.primary,
@@ -27,7 +27,7 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
             if item.type == 'reasoning':
                 print('[Reasoning]')
                 for summary in item.summary:
-                    print(summary.text)
+                    print('\t' + summary.text)
             elif item.type == 'message':
                 print('[Assistant]')
                 for content in item.content:
@@ -35,16 +35,17 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
                     print(f'{content.text}')
             elif item.type == 'function_call':
                 has_tool_call = True
-                if item.name == 'bash':
-                    command = json.loads(item.arguments)['command']
-                    result = run_bash(command)
-                    print(f'[Bash]\n  $ {command}')
-                    print(f'  > {result}')
-                    messages.append({
-                        'type': 'function_call_output',
-                        'call_id': item.call_id,
-                        'output': result,
-                    })
+                handler = TOOL_HANDLERS.get(item.name)
+                args = json.loads(item.arguments) if item.arguments else {}
+                result = handler(**args) if handler else f'Unknown tool {item.name}'
+                print(f'[Tool {item.name}]')
+                print(f'Args: {args}')
+                print(f'Result: ---\n{result}\n---')
+                messages.append({
+                    'type': 'function_call_output',
+                    'call_id': item.call_id,
+                    'output': result,
+                })
 
         if not has_tool_call:
             break
