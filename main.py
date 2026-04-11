@@ -2,7 +2,7 @@ import json
 import asyncio
 from openai import AsyncOpenAI
 
-from tools import TOOLS, TOOL_HANDLERS, run_bash
+from tools import TOOLS, TOOL_HANDLERS
 from paths import WORKDIR
 from settings import Settings, ProviderConfig
 
