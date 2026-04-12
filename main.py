@@ -55,7 +55,7 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
                 renderer.render(Event(
                     type='tool_call',
                     prefix=f'[ToolCall:{item.name}] ',
-                    content=args,
+                    content='\n'.join(f'{parm}={arg}' for parm, arg in args.items()),
                 ))
 
                 result = handler(**args) if handler else f'Unknown tool {item.name}'
