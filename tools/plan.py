@@ -99,7 +99,6 @@ tools = [
         'type': 'function',
         'name': 'todo',
         'description': 'Rewrite the current session plan for multi-step work',
-        'strict': True,
         'parameters': {
             'type': 'object',
             'properties': {
