@@ -1,10 +1,19 @@
 import json
 import asyncio
+from typing import Any, Literal
+from dataclasses import dataclass
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
 from openai import AsyncOpenAI
 
 from tools import TOOLS, TOOL_HANDLERS
 from paths import WORKDIR
 from settings import Settings, ProviderConfig
+from style import Renderer, Event
+
+
+
+renderer = Renderer()
 
 
 async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: list):
@@ -25,22 +34,37 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
 
         for item in response.output:
             if item.type == 'reasoning':
-                print('[Reasoning]')
                 for summary in item.summary:
-                    print('\t' + summary.text)
+                    renderer.render(Event(
+                        type='reasoning',
+                        prefix='[Reasoning] ',
+                        content=summary.text,
+                    ))
             elif item.type == 'message':
-                print('[Assistant]')
                 for content in item.content:
                     messages.append({'role': 'assistant', 'content': content.text})
-                    print(f'{content.text}')
+                    renderer.render(Event(
+                        type='assistant',
+                        prefix='[Assistant] ',
+                        content=content.text,
+                    ))
             elif item.type == 'function_call':
                 has_tool_call = True
                 handler = TOOL_HANDLERS.get(item.name)
                 args = json.loads(item.arguments) if item.arguments else {}
+                renderer.render(Event(
+                    type='tool_call',
+                    prefix=f'[ToolCall:{item.name}] ',
+                    content='\n'.join(f'{parm}={arg}' for parm, arg in args.items()),
+                ))
+
                 result = handler(**args) if handler else f'Unknown tool {item.name}'
-                print(f'[Tool {item.name}]')
-                print(f'Args: {args}')
-                print(f'Result: ---\n{result}\n---')
+                renderer.render(Event(
+                    type='tool_result',
+                    prefix=f'[ToolResult:{item.name}] ',
+                    content=result,
+                ))
+
                 messages.append({
                     'type': 'function_call_output',
                     'call_id': item.call_id,
@@ -66,6 +90,7 @@ async def main():
     settings = Settings()
     provider = settings.get_provider()
     history_messages = []
+    session = PromptSession()
 
     client = AsyncOpenAI(
         api_key=provider.api_key.get_secret_value(),
@@ -74,11 +99,19 @@ async def main():
 
     while True:
         try:
-            query = input('\033[36mInput >> \033[0m')
-        except (EOFError, KeyboardInterrupt):
+            with patch_stdout():
+                query = await session.prompt_async('>>> ')
+        except KeyboardInterrupt:
+            print('^C')
             break
-        if query.strip().lower() in ('q', 'exit', ''):
+        except EOFError:
+            print('Bye~')
             break
+
+        if query.strip().lower() in ('q', 'exit'):
+            print('Bye~')
+            break
+
         history_messages.append({'role': 'user', 'content': query})
         await agent_loop(provider, client, messages=history_messages)
 
