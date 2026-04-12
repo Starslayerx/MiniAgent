@@ -1,3 +1,4 @@
+import json
 from typing import TypedDict, Literal
 from dataclasses import dataclass, field
 
@@ -93,35 +94,46 @@ class TodoManager:
 
 TODO = TodoManager()
 
-tools = {
-    'name': 'todo',
-    'descripition': 'Rewrite the current session plan for multi-step work',
-    'input_schema': {
-        'type': 'object',
-        'properties': {
-            'items': {
-                'type': 'array',
+tools = [
+    {
+        'type': 'function',
+        'name': 'todo',
+        'description': 'Rewrite the current session plan for multi-step work',
+        'strict': True,
+        'parameters': {
+            'type': 'object',
+            'properties': {
                 'items': {
-                    'type': 'object',
-                    'properties': {
-                        'content': {'type': 'string'},
-                        'status': {
-                            'type': 'string',
-                            'enum': ['pending', 'in_progress', 'completed'],
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'content': {'type': 'string'},
+                            'status': {
+                                'type': 'string',
+                                'enum': ['pending', 'in_progress', 'completed'],
+                            },
+                            'active_form': {
+                                'type': 'string',
+                                'description': 'Optional present-continuous label.'
+                            },
                         },
-                        'active_form': {
-                            'type': 'string',
-                            'descripition': 'Optional present-continuous label.'
-                        },
+                        'additionalProperties': False,
+                        'required': ['content', 'status'],
                     },
-                    'required': ['content', 'status'],
                 },
             },
+            'additionalProperties': False,
+            'required': ['items'],
         },
-        'required': ['items'],
-    },
-}
+    }
+]
+
+def normalize_tool_args(parm):
+    if isinstance(parm, str):
+        parm = json.loads(parm)
+    return parm
 
 tool_handlers = {
-    'todo': lambda **kw: TODO.update(kw['items'])
+    'todo': lambda **kw: TODO.update(normalize_tool_args(kw['items']))
 }
