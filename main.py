@@ -1,7 +1,5 @@
 import json
 import asyncio
-from typing import Any, Literal
-from dataclasses import dataclass
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from openai import AsyncOpenAI
@@ -14,7 +12,6 @@ from style import Renderer, Event
 
 
 renderer = Renderer()
-
 
 async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: list):
     init_system_message = f"You are a coding agent at {WORKDIR}. Use bash to solve tasks. Act, don't explain."
@@ -103,7 +100,7 @@ async def main():
                 query = await session.prompt_async('>>> ')
         except KeyboardInterrupt:
             print('^C')
-            break
+            continue
         except EOFError:
             print('Bye~')
             break
