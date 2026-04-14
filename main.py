@@ -6,6 +6,7 @@ from openai import AsyncOpenAI
 
 from tools import TOOLS, TOOL_HANDLERS
 from paths import WORKDIR
+from prompts import SYSTEM_PROMPT
 from settings import Settings, ProviderConfig
 from style import Renderer, Event
 
@@ -14,11 +15,10 @@ from style import Renderer, Event
 renderer = Renderer()
 
 async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: list):
-    init_system_message = f"You are a coding agent at {WORKDIR}. Use bash to solve tasks. Act, don't explain."
 
     response = await client.responses.create(
         model=provider.model.primary,
-        instructions=init_system_message,
+        instructions=SYSTEM_PROMPT,
         input=messages,
         tools=TOOLS,
         extra_body={
@@ -73,7 +73,7 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
 
         response = await client.responses.create(
             model=provider.model.primary,
-            instructions=init_system_message,
+            instructions=SYSTEM_PROMPT,
             input=messages,
             previous_response_id=response.id,
             tools=TOOLS,
@@ -86,7 +86,7 @@ async def agent_loop(provider: ProviderConfig, client: AsyncOpenAI, messages: li
 async def main():
     settings = Settings()
     provider = settings.get_provider()
-    history_messages = []
+    history_messages = [{'role': 'user', 'content': f'Your current work dir is `{WORKDIR}`'}]
     session = PromptSession()
 
     client = AsyncOpenAI(
