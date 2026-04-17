@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from paths import WORKDIR
+from core.paths import WORKDIR
 
 
 class PathSecurityError(ValueError):
