@@ -54,7 +54,11 @@ async def agent_loop(
                     content='\n'.join(f'{parm}={arg}' for parm, arg in args.items()),
                 ))
 
-                result = handler(**args) if handler else f'Unknown tool {item.name}'
+                if handler:
+                    result = await handler(**args)
+                else:
+                    result = f'Unknown tool {item.name}'
+
                 renderer.render(Event(
                     type='tool_result',
                     prefix=f'[ToolResult:{item.name}] ',

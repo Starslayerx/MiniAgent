@@ -128,11 +128,18 @@ tools = [
     }
 ]
 
+
 def normalize_tool_args(parm):
     if isinstance(parm, str):
         parm = json.loads(parm)
     return parm
 
+async def update_todo(items):
+    items = normalize_tool_args(items)
+    if not isinstance(items, list):
+        return 'Error: todo.items must be a list'
+    return TODO.update(items)
+
 tool_handlers = {
-    'todo': lambda **kw: TODO.update(normalize_tool_args(kw['items']))
+    'todo': update_todo,
 }
