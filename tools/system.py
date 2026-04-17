@@ -119,7 +119,7 @@ tools = [
             'type': 'object',
             'properties': {
                 'path': {'type': 'string'},
-                'limit': {'type': 'integer'},
+                'line_limit': {'type': 'integer'},
                 'encoding': {'type': 'string'},
             },
             'additionalProperties': False,
