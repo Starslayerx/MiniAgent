@@ -1,4 +1,4 @@
-from typing import Literal, Any
+from typing import Literal
 from dataclasses import dataclass
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit import print_formatted_text
@@ -53,3 +53,4 @@ class Renderer:
             FormattedText(fragments),
             style=style,
         )
+
