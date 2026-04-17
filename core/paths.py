@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-ROOT_DIR = Path(__file__).resolve().parent
+ROOT_DIR = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = ROOT_DIR / 'prompts/'
 ENV_PATH = ROOT_DIR / '.env'
 PROVIDERS_TOML = ROOT_DIR / 'providers.toml'

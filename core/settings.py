@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -7,7 +7,7 @@ from pydantic_settings import (
     CliSettingsSource,
 )
 
-from paths import ENV_PATH, PROVIDERS_TOML
+from core.paths import ENV_PATH, PROVIDERS_TOML
 
 
 class AgentModelsConfig(BaseModel):
