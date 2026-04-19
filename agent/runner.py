@@ -31,11 +31,12 @@ async def agent_loop(
         for item in response.output:
             if item.type == 'reasoning':
                 for summary in item.summary:
-                    renderer.render(Event(
-                        type='reasoning',
-                        prefix='[Reasoning] ',
-                        content=summary.text,
-                    ))
+                    if summary.type == 'summary_text':
+                        renderer.render(Event(
+                            type='reasoning',
+                            prefix='[Reasoning] ',
+                            content=summary.text,
+                        ))
             elif item.type == 'message':
                 for content in item.content:
                     messages.append({'role': 'assistant', 'content': content.text})
