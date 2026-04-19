@@ -9,6 +9,7 @@ dependencies = [
   "httpx[socks]>=0.28.1",
   "openai>=2.30.0",
   "prompt-toolkit>=3.0.52",
+  "pydantic>=2.12.5",
   "pydantic-settings>=2.13.1",
   "pytest>=9.0.2",
 ]

@@ -31,11 +31,12 @@ async def agent_loop(
         for item in response.output:
             if item.type == 'reasoning':
                 for summary in item.summary:
-                    renderer.render(Event(
-                        type='reasoning',
-                        prefix='[Reasoning] ',
-                        content=summary.text,
-                    ))
+                    if summary.type == 'summary_text':
+                        renderer.render(Event(
+                            type='reasoning',
+                            prefix='[Reasoning] ',
+                            content=summary.text,
+                        ))
             elif item.type == 'message':
                 for content in item.content:
                     messages.append({'role': 'assistant', 'content': content.text})
@@ -54,7 +55,11 @@ async def agent_loop(
                     content='\n'.join(f'{parm}={arg}' for parm, arg in args.items()),
                 ))
 
-                result = handler(**args) if handler else f'Unknown tool {item.name}'
+                if handler:
+                    result = await handler(**args)
+                else:
+                    result = f'Unknown tool {item.name}'
+
                 renderer.render(Event(
                     type='tool_result',
                     prefix=f'[ToolResult:{item.name}] ',

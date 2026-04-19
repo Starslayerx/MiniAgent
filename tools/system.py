@@ -1,4 +1,5 @@
-import subprocess
+import aiofiles
+import asyncio
 from pathlib import Path
 
 from core.paths import WORKDIR
@@ -15,46 +16,51 @@ def safe_path(path: str) -> Path:
         raise PathSecurityError(f'Path escapes workspace: {path}')
     return path
 
-def run_bash(command: str) -> str:
+async def run_bash(command: str, timeout: int = 120) -> str:
     """Run a bash command"""
 
     dangerous = ['rm -rf /', 'sudo', 'shutdown', 'reboot', '> /dev/']
     if any(d in command for d in dangerous):
         return 'Error: Dangerous command blocked'
-    try:
-        r = subprocess.run(
-            command,
-            shell=True,
-            cwd=WORKDIR,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        out = (r.stdout + r.stderr).strip()
-        return out[:5000] if out else '(no output)'
-    except subprocess.TimeoutExpired:
-        return 'Error: Timeout (120s)'
 
-def run_read(path: str, line_limit: int = None, encoding: str = 'utf-8') -> str:
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        cwd=WORKDIR,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        out = (stdout + stderr).decode(errors='replace').strip()
+        return out[:5000] if out else '(no output)'
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        return f'Error: Timeout ({timeout}s)'
+
+async def run_read(path: str, line_limit: int = None, encoding: str = 'utf-8') -> str:
     """Read file"""
 
     try:
-        text = safe_path(path).read_text(encoding=encoding)
-        lines = text.splitlines()
-        if line_limit and line_limit < len(lines):
-            lines = lines[:line_limit]
-        return '\n'.join(lines)
+        async with aiofiles.open(safe_path(path), 'r', encoding=encoding) as f:
+            text = await f.read()
+            lines = text.splitlines()
+            if line_limit and line_limit < len(lines):
+                lines = lines[:line_limit]
+            return '\n'.join(lines)
     except Exception as e:
         return f'Error: {e}'
 
-def run_write(path: str, content: str, encoding: str = 'utf-8') -> str:
+
+async def run_write(path: str, content: str, encoding: str = 'utf-8') -> str:
     """Write file"""
 
     try:
         abs_path = safe_path(path)
         abs_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(abs_path, 'x', encoding=encoding) as f:
-            f.write(content)
+        async with aiofiles.open(abs_path, 'x', encoding=encoding) as f:
+            await f.write(content)
         return f'Success: file saved to {path}'
     except PathSecurityError as e:
         return f'Error: {e}'
@@ -65,18 +71,20 @@ def run_write(path: str, content: str, encoding: str = 'utf-8') -> str:
     except Exception as e:
         return f'Error: {e}'
 
-def run_edit(path: str, old_content: str, new_content: str, encoding='utf-8') -> str:
+async def run_edit(path: str, old_content: str, new_content: str, encoding='utf-8') -> str:
     """Edit file"""
 
     try:
         abs_path = safe_path(path)
-        with open(abs_path, 'r', encoding=encoding) as f:
-            content = f.read()
+        async with aiofiles.open(abs_path, 'r', encoding=encoding) as f:
+            content = await f.read()
+
         if old_content not in content:
             return f'Error: old_content not found in this file'
         new_full_content = content.replace(old_content, new_content)
-        with open(abs_path, 'w', encoding=encoding) as f:
-            f.write(new_full_content)
+
+        async with aiofiles.open(abs_path, 'w', encoding=encoding) as f:
+            await f.write(new_full_content)
         return f'Success: file edited successfully'
     except PathSecurityError as e:
         return f'Error: {e}'
@@ -96,9 +104,8 @@ tools = [
         'parameters': {
             'type': 'object',
             'properties': {
-                'command': {
-                    'type': 'string',
-                },
+                'command': {'type': 'string'},
+                'timeout': {'type': 'integer'},
             },
             'additionalProperties': False,
             'required': ['command'],
@@ -112,7 +119,7 @@ tools = [
             'type': 'object',
             'properties': {
                 'path': {'type': 'string'},
-                'limit': {'type': 'integer'},
+                'line_limit': {'type': 'integer'},
                 'encoding': {'type': 'string'},
             },
             'additionalProperties': False,
@@ -153,21 +160,8 @@ tools = [
 ]
 
 tool_handlers = {
-    'bash': lambda **kw: run_bash(kw['command']),
-    'read_file': lambda **kw: run_read(
-        kw['path'],
-        kw.get('limit'),
-        kw.get('encoding'),
-    ),
-    'write_file': lambda **kw: run_write(
-        kw['path'],
-        kw['content'],
-        kw.get('encoding'),
-    ),
-    'edit_file': lambda **kw: run_edit(
-        kw['path'],
-        kw['old_content'],
-        kw['new_content'],
-        kw.get('encoding'),
-    ),
+    'bash': run_bash,
+    'read_file': run_read,
+    'write_file': run_write,
+    'edit_file': run_edit,
 }
