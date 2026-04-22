@@ -1,19 +1,20 @@
 import json
-from openai import AsyncOpenAI
 
-from ui.renderer import Renderer, Event
+from agent.context import AgentContext
+from ui.renderer import Event
 
 
 async def agent_loop(
     *,
-    model: str,
-    client: AsyncOpenAI,
+    context: AgentContext,
     system_prompt: str,
     messages: list,
     tools: list,
     tool_handlers: dict,
-    renderer: Renderer,
-):
+) -> str:
+    client = context.client
+    model = context.primary_model
+    renderer = context.renderer
 
     response = await client.responses.create(
         model=model,
@@ -27,6 +28,7 @@ async def agent_loop(
 
     while True:
         has_tool_call = False
+        message_parts = []
 
         for item in response.output:
             if item.type == 'reasoning':
@@ -39,6 +41,7 @@ async def agent_loop(
                         ))
             elif item.type == 'message':
                 for content in item.content:
+                    message_parts.append(content.text)
                     messages.append({'role': 'assistant', 'content': content.text})
                     renderer.render(Event(
                         type='assistant',
@@ -73,7 +76,7 @@ async def agent_loop(
                 })
 
         if not has_tool_call:
-            break
+            return ''.join(message_parts)
 
         response = await client.responses.create(
             model=model,
@@ -85,4 +88,3 @@ async def agent_loop(
                 'enable_thinking': True,
             }
         )
-

@@ -1,4 +1,3 @@
-import json
 from typing import Literal
 from pydantic import BaseModel, Field, Json, field_validator
 
@@ -68,49 +67,53 @@ class TodoManager:
 
 
 
-TODO = TodoManager()
-async def update_todo(items):
-    try:
-        args = TodoArguments(items=items)
-        return TODO.update(args.items)
-    except Exception as e:
-        return f'Error: {str(e)}'
+async def build_plan_registry(todo_manager: TodoManager | None = None):
+    manager = todo_manager or TodoManager()
 
-tools = [
-    {
-        'type': 'function',
-        'name': 'todo',
-        'description': 'Rewrite the current session plan for multi-step work',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'items': {
-                    'type': 'array',
+    async def update_todo(items):
+        try:
+            args = TodoArguments(items=items)
+            return manager.update(args.items)
+        except Exception as e:
+            return f'Error: {str(e)}'
+
+    tools = [
+        {
+            'type': 'function',
+            'name': 'todo',
+            'description': 'Rewrite the current session plan for multi-step work',
+            'parameters': {
+                'type': 'object',
+                'properties': {
                     'items': {
-                        'type': 'object',
-                        'properties': {
-                            'content': {'type': 'string'},
-                            'status': {
-                                'type': 'string',
-                                'enum': ['pending', 'in_progress', 'completed'],
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'content': {'type': 'string'},
+                                'status': {
+                                    'type': 'string',
+                                    'enum': ['pending', 'in_progress', 'completed'],
+                                },
+                                'active_form': {
+                                    'type': 'string',
+                                    'description': 'Optional present-continuous label.'
+                                },
                             },
-                            'active_form': {
-                                'type': 'string',
-                                'description': 'Optional present-continuous label.'
-                            },
+                            'additionalProperties': False,
+                            'required': ['content', 'status'],
                         },
-                        'additionalProperties': False,
-                        'required': ['content', 'status'],
                     },
                 },
+                'additionalProperties': False,
+                'required': ['items'],
             },
-            'additionalProperties': False,
-            'required': ['items'],
-        },
+        }
+    ]
+
+    tool_handlers = {
+        'todo': update_todo,
     }
-]
 
+    return tools, tool_handlers
 
-tool_handlers = {
-    'todo': update_todo,
-}
