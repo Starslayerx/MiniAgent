@@ -28,6 +28,7 @@ async def agent_loop(
 
     while True:
         has_tool_call = False
+        message_parts = []
 
         for item in response.output:
             if item.type == 'reasoning':
@@ -40,6 +41,7 @@ async def agent_loop(
                         ))
             elif item.type == 'message':
                 for content in item.content:
+                    message_parts.append(context.text)
                     messages.append({'role': 'assistant', 'content': content.text})
                     renderer.render(Event(
                         type='assistant',
@@ -74,7 +76,7 @@ async def agent_loop(
                 })
 
         if not has_tool_call:
-            return messages[-1]['content']
+            return ''.join(message_parts)
 
         response = await client.responses.create(
             model=model,
