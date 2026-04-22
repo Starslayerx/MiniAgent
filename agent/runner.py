@@ -41,7 +41,7 @@ async def agent_loop(
                         ))
             elif item.type == 'message':
                 for content in item.content:
-                    message_parts.append(context.text)
+                    message_parts.append(content.text)
                     messages.append({'role': 'assistant', 'content': content.text})
                     renderer.render(Event(
                         type='assistant',
