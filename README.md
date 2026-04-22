@@ -1,8 +1,14 @@
 A mini cli agent.
 
-Current: Able to use bash tool.
+Current ability:
 
-Run this mini agent:
+- Run bash command
+- Edit files
+- Planning
+- Run Subagent
 
-1. Configure model providers in `providers.toml`
-2. Run `uv run main.py`
+How to run this:
+
+1. Use uv to sync dependencies `uv sync`
+2. Configure OpenAI Responses API-compatible model providers in `providers.toml` 
+3. Run `uv run main.py`
