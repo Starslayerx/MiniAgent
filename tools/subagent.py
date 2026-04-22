@@ -1,15 +1,46 @@
-from core.paths import WORKDIR
+from agent.runner import agent_loop
+from agent.context import AgentContext
 from prompts import SYSTEM_PROMPT
 
 
-MAX_ITERATIONS = 30
+async def build_subagent_registry(
+    context: AgentContext,
+    child_tools: list,
+    child_tool_handlers: dict,
+    max_iterations: int = 30, # Not Implemented Yet
+):
 
-async def task(prompt: str) -> str:
-    sub_system_prompt = f'You are a coding agent at {WORKDIR}. Complete the given task, then summarize your findings.'
-    sub_messages = [{'role': 'user', 'content': prompt}]
-    for _ in range(MAX_ITERATIONS):
-        pass
+    async def run_subagent(prompt: str):
+        """Run a subagent"""
 
+        messages = [{'role': 'user', 'content': prompt}]
+        return await agent_loop(
+            context=context,
+            system_prompt=SYSTEM_PROMPT,
+            messages=messages,
+            tools=child_tools,
+            tool_handlers=child_tool_handlers,
+        )
 
-tools = [{}]
-tool_handlers = {}
+    tools = [
+        {
+            'type': 'function',
+            'name': 'task',
+            'description': 'Spawn a sunagent with fresh context. It share the same system prompt and filesystem but not conversation history.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'prompt': {
+                        'type': 'string',
+                        'description': 'Short description of the task',
+                    },
+                },
+                'additionalProperties': False,
+                'required': ['prompt'],
+            },
+        },
+    ]
+
+    tool_handlers = {'task': run_subagent}
+
+    return tools, tool_handlers
