@@ -12,21 +12,25 @@ async def agent_loop(
     tools: list,
     tool_handlers: dict,
 ) -> str:
+    """Core agent logic"""
+
     client = context.client
     model = context.primary_model
     renderer = context.renderer
 
-    response = await client.responses.create(
-        model=model,
-        instructions=system_prompt,
-        input=messages,
-        tools=tools,
-        extra_body={
-            'enable_thinking': True,
-        }
-    )
-
     while True:
+        response = await client.responses.create(
+            model=model,
+            instructions=system_prompt,
+            input=messages,
+            tools=tools,
+            reasoning={'effort': 'high'},
+            extra_body={
+                'thinking': {'type': 'enabled'},  # deepseek
+                'enable_thinking': True,          # qwen
+            },
+        )
+
         has_tool_call = False
         message_parts = []
 
@@ -77,14 +81,3 @@ async def agent_loop(
 
         if not has_tool_call:
             return ''.join(message_parts)
-
-        response = await client.responses.create(
-            model=model,
-            instructions=system_prompt,
-            input=messages,
-            previous_response_id=response.id,
-            tools=tools,
-            extra_body={
-                'enable_thinking': True,
-            }
-        )

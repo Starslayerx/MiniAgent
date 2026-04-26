@@ -2,7 +2,7 @@ import aiofiles
 import asyncio
 from pathlib import Path
 
-from core.paths import WORKDIR
+from core.paths import get_current_dir
 
 
 class PathSecurityError(ValueError):
@@ -11,13 +11,16 @@ class PathSecurityError(ValueError):
 def safe_path(path: str) -> Path:
     """Return absolute path"""
 
-    path = (WORKDIR / path).resolve()
-    if not path.is_relative_to(WORKDIR):
+    work_dir = get_current_dir()
+    path = (work_dir / path).resolve()
+    if not path.is_relative_to(work_dir):
         raise PathSecurityError(f'Path escapes workspace: {path}')
     return path
 
 async def run_bash(command: str, timeout: int = 120) -> str:
     """Run a bash command"""
+
+    work_dir = get_current_dir()
 
     dangerous = ['rm -rf /', 'sudo', 'shutdown', 'reboot', '> /dev/']
     if any(d in command for d in dangerous):
@@ -25,7 +28,7 @@ async def run_bash(command: str, timeout: int = 120) -> str:
 
     proc = await asyncio.create_subprocess_shell(
         command,
-        cwd=WORKDIR,
+        cwd=work_dir,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
