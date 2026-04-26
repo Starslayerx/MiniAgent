@@ -4,6 +4,16 @@ from agent.context import AgentContext
 from ui.renderer import Event
 
 
+def to_history_item(item) -> dict:
+    data = item.model_dump(exclude_none=True)
+    data.pop('status', None)
+
+    if item.type == 'message':
+        return {'role': item.role, 'content': data['content']}
+
+    return data
+
+
 async def agent_loop(
     *,
     context: AgentContext,
@@ -12,26 +22,31 @@ async def agent_loop(
     tools: list,
     tool_handlers: dict,
 ) -> str:
+    """Core agent logic"""
+
     client = context.client
     model = context.primary_model
     renderer = context.renderer
 
-    response = await client.responses.create(
-        model=model,
-        instructions=system_prompt,
-        input=messages,
-        tools=tools,
-        extra_body={
-            'enable_thinking': True,
-        }
-    )
-
     while True:
+        response = await client.responses.create(
+            model=model,
+            instructions=system_prompt,
+            input=messages,
+            tools=tools,
+            reasoning={'effort': 'high'},
+            extra_body={
+                'thinking': {'type': 'enabled'},  # deepseek
+                'enable_thinking': True,          # qwen
+            },
+        )
+
         has_tool_call = False
         message_parts = []
 
         for item in response.output:
             if item.type == 'reasoning':
+                messages.append(to_history_item(item))
                 for summary in item.summary:
                     if summary.type == 'summary_text':
                         renderer.render(Event(
@@ -39,16 +54,19 @@ async def agent_loop(
                             prefix='[Reasoning] ',
                             content=summary.text,
                         ))
+
             elif item.type == 'message':
+                messages.append(to_history_item(item))
                 for content in item.content:
                     message_parts.append(content.text)
-                    messages.append({'role': 'assistant', 'content': content.text})
                     renderer.render(Event(
                         type='assistant',
                         prefix='[Assistant] ',
                         content=content.text,
                     ))
+
             elif item.type == 'function_call':
+                messages.append(to_history_item(item))
                 has_tool_call = True
                 handler = tool_handlers.get(item.name)
                 args = json.loads(item.arguments) if item.arguments else {}
@@ -77,14 +95,3 @@ async def agent_loop(
 
         if not has_tool_call:
             return ''.join(message_parts)
-
-        response = await client.responses.create(
-            model=model,
-            instructions=system_prompt,
-            input=messages,
-            previous_response_id=response.id,
-            tools=tools,
-            extra_body={
-                'enable_thinking': True,
-            }
-        )

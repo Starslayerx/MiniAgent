@@ -1,4 +1,4 @@
-provider = 'dashscope'
+provider = 'deepseek'
 
 [providers.dashscope]
 api_key = 'sk-***'
@@ -13,5 +13,5 @@ api_key = 'sk-***'
 base_url = 'https://api.deepseek.com'
 
 [providers.deepseek.model]
-primary = 'deepseek-reasoner'
-light = 'deepseek-reasoner'
+primary = 'deepseek-v4-pro'
+light = 'deepseek-v4-flash'

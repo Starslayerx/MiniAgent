@@ -2,12 +2,12 @@ import asyncio
 from prompt_toolkit import PromptSession
 from openai import AsyncOpenAI
 
-from core.paths import WORKDIR
+from core.paths import get_current_dir
 from core.settings import Settings
 from prompts.system import SYSTEM_PROMPT
-from tools.registry import build_root_registry
 from agent.runner import agent_loop
 from agent.context import AgentContext
+from tools.registry import build_root_registry
 from ui.renderer import Renderer
 from ui.input import get_input
 
@@ -22,15 +22,16 @@ async def main():
 
     session = PromptSession()
     renderer = Renderer()
+    work_dir = get_current_dir()
 
-    history_messages = [{'role': 'user', 'content': f'Your current work dir is `{WORKDIR}`'}]
+    history_messages = [{'role': 'user', 'content': f'Your current work dir is `{work_dir}`'}]
 
     context = AgentContext(
         client=client,
         primary_model=provider.model.primary,
         light_model=provider.model.light,
         renderer=renderer,
-        workdir=WORKDIR,
+        workdir=work_dir,
     )
     root_tools, root_tool_handlers = await build_root_registry(context)
 

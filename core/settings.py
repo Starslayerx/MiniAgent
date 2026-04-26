@@ -7,7 +7,7 @@ from pydantic_settings import (
     CliSettingsSource,
 )
 
-from core.paths import ENV_PATH, PROVIDERS_TOML
+from core.paths import get_env_file_path, get_providers_file_path
 
 
 class AgentModelsConfig(BaseModel):
@@ -21,7 +21,7 @@ class ProviderConfig(BaseModel):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=ENV_PATH,
+        env_file=get_env_file_path(),
         env_file_encoding='utf-8',
         env_nested_delimiter='__',
     )
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
             dotenv_settings,
             TomlConfigSettingsSource(
                 settings_cls,
-                toml_file=PROVIDERS_TOML,
+                toml_file=get_providers_file_path(),
                 deep_merge=True,
             ),
             file_secret_settings,
