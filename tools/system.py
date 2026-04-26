@@ -132,7 +132,7 @@ tools = [
     {
         'type': 'function',
         'name': 'write_file',
-        'description': 'Write a new file',
+        'description': 'Create a new file without overwriting any existing file',
         'parameters': {
             'type': 'object',
             'properties': {
