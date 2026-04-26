@@ -6,7 +6,6 @@ from ui.renderer import Event
 
 def to_history_item(item) -> dict:
     data = item.model_dump(exclude_none=True)
-    data.pop('id', None)
     data.pop('status', None)
 
     if item.type == 'message':
