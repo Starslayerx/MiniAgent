@@ -25,7 +25,7 @@ async def agent_loop(
     """Core agent logic"""
 
     client = context.client
-    model = context.primary_model
+    model = context.model_name
     renderer = context.renderer
 
     while True:

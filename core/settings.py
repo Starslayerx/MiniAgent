@@ -30,6 +30,12 @@ class ProviderConfig(BaseModel):
     extra_body: dict[str, Any] | None = None
     reasoning_efforts: list[str] | None = None
 
+    def get_model_config(self, model_name: str) -> ModelConfig | None:
+        return next(
+            (item for item in self.models_config if item.name == model_name),
+            None,
+        )
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=get_env_file_path(),

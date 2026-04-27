@@ -1,4 +1,5 @@
 import asyncio
+from httpx._transports import default
 from prompt_toolkit import PromptSession
 from openai import AsyncOpenAI
 
@@ -26,10 +27,12 @@ async def main():
 
     history_messages = [{'role': 'user', 'content': f'Your current work dir is `{work_dir}`'}]
 
+    model_config = provider.get_model_config(provider.default_model)
+
     context = AgentContext(
         client=client,
-        primary_model=provider.model.primary,
-        light_model=provider.model.light,
+        model_name=provider.default_model,
+        max_context_tokens=model_config.max_context_tokens if model_config else None,
         renderer=renderer,
         workdir=work_dir,
     )

@@ -8,7 +8,7 @@ from ui.renderer import Renderer
 @dataclass
 class AgentContext:
     client: AsyncOpenAI
-    primary_model: str
-    light_model: str
+    model_name: str
+    max_context_tokens: int | None
     renderer: Renderer
     workdir: Path
