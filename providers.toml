@@ -1,17 +1,24 @@
-provider = 'deepseek'
+provider = 'dashscope'
 
 [providers.dashscope]
-api_key = 'sk-***'
+protocol = 'openai_responses'
 base_url = 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
-
-[providers.dashscope.model]
-primary = 'qwen3.5-397b-a17b'
-light = 'qwen3.6-35b-a3b'
+api_key = 'sk-***'
+default_model = 'qwen3.6-35b-a3b'
+models_config = [
+    { name = 'qwen3.6-35b-a3b', max_context_tokens = 256000 },
+    { name = 'qwen3.5-397b-a17b', max_context_tokens = 256000 },
+]
+extra_body = { enable_thinking = true }
 
 [providers.deepseek]
-api_key = 'sk-***'
+protocol = 'openai_completions'
 base_url = 'https://api.deepseek.com'
-
-[providers.deepseek.model]
-primary = 'deepseek-v4-pro'
-light = 'deepseek-v4-flash'
+api_key = 'sk-***'
+default_model = 'deepseek-v4-flash'
+models_config = [
+    { name = 'deepseek-v4-flash', max_context_tokens = 1000000 },
+    { name = 'deepseek-v4-pro', max_context_tokens = 1000000 },
+]
+extra_body = { thinking = {type = 'enabled' }}
+reasoning_efforts = ['high', 'max']
