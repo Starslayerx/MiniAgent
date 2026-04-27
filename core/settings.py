@@ -19,7 +19,7 @@ class ProviderProtocol(StrEnum):
 
 class ModelConfig(BaseModel):
     name: str
-    max_context_tokens: int
+    max_context_tokens: int | None = None
 
 class ProviderConfig(BaseModel):
     protocol: ProviderProtocol
