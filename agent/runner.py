@@ -1,97 +1,83 @@
 import json
 
 from agent.context import AgentContext
+from llm.types import (
+    AssistantMessage,
+    SystemMessage,
+    AgentMessage,
+    ToolSpec,
+    ToolResultMessage,
+)
 from ui.renderer import Event
-
-
-def to_history_item(item) -> dict:
-    data = item.model_dump(exclude_none=True)
-    data.pop('status', None)
-
-    if item.type == 'message':
-        return {'role': item.role, 'content': data['content']}
-
-    return data
 
 
 async def agent_loop(
     *,
     context: AgentContext,
-    system_prompt: str,
-    messages: list,
-    tools: list,
+    system_message: SystemMessage,
+    messages: list[AgentMessage],
+    tools: list[ToolSpec],
     tool_handlers: dict,
 ) -> str:
     """Core agent logic"""
 
     client = context.client
-    model = context.model_name
     renderer = context.renderer
 
     while True:
-        response = await client.responses.create(
-            model=model,
-            instructions=system_prompt,
-            input=messages,
+        response: AssistantMessage = await client.create_message(
+            system_message=system_message,
+            messages=messages,
             tools=tools,
-            reasoning={'effort': 'high'},
-            extra_body={
-                'thinking': {'type': 'enabled'},  # deepseek
-                'enable_thinking': True,          # qwen
-            },
         )
+        messages.append(response)
 
+        agent_response_parts = []
         has_tool_call = False
-        message_parts = []
-
-        for item in response.output:
-            if item.type == 'reasoning':
-                messages.append(to_history_item(item))
-                for summary in item.summary:
-                    if summary.type == 'summary_text':
-                        renderer.render(Event(
-                            type='reasoning',
-                            prefix='[Reasoning] ',
-                            content=summary.text,
-                        ))
-
-            elif item.type == 'message':
-                messages.append(to_history_item(item))
-                for content in item.content:
-                    message_parts.append(content.text)
-                    renderer.render(Event(
-                        type='assistant',
-                        prefix='[Assistant] ',
-                        content=content.text,
-                    ))
-
-            elif item.type == 'function_call':
-                messages.append(to_history_item(item))
+        for part in response.parts:
+            if part.type == 'reasoning':
+                renderer.render(Event(
+                    type='reasoning',
+                    prefix='[Reasoning] ',
+                    content=part.content,
+                ))
+            elif part.type == 'text':
+                agent_response_parts.append(part.content)
+                renderer.render(Event(
+                    type='assistant',
+                    prefix='[Assistant] ',
+                    content=part.content,
+                ))
+            elif part.type == 'tool_call':
                 has_tool_call = True
-                handler = tool_handlers.get(item.name)
-                args = json.loads(item.arguments) if item.arguments else {}
                 renderer.render(Event(
                     type='tool_call',
-                    prefix=f'[ToolCall:{item.name}] ',
-                    content='\n'.join(f'{parm}={arg}' for parm, arg in args.items()),
+                    prefix=f'[ToolCall:{part.name}:{part.tool_call_id}] ',
+                    content=json.dumps(part.arguments)
                 ))
 
+                handler = tool_handlers.get(part.name)
+                is_error = False
                 if handler:
-                    result = await handler(**args)
+                    result = await handler(**part.arguments)
                 else:
-                    result = f'Unknown tool {item.name}'
+                    is_error = True
+                    result = f'Unknown tool {part.name}'
 
                 renderer.render(Event(
                     type='tool_result',
-                    prefix=f'[ToolResult:{item.name}] ',
+                    prefix=f'[ToolResult:{part.name}] ',
                     content=result,
                 ))
 
-                messages.append({
-                    'type': 'function_call_output',
-                    'call_id': item.call_id,
-                    'output': result,
-                })
+                messages.append(
+                    ToolResultMessage(
+                        tool_call_id=part.tool_call_id,
+                        name=part.name,
+                        content=result,
+                        is_error=is_error,
+                    ),
+                )
 
         if not has_tool_call:
-            return ''.join(message_parts)
+            return ''.join(agent_response_parts)
