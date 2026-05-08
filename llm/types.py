@@ -11,13 +11,23 @@ class ToolSpec:
 
 
 @dataclass
-class TextPart:
+class TextBlock:
     content: str
     type: Literal['text'] = 'text'
 
+ContentBlock = TextBlock
+
+@dataclass
+class MessagePart:
+    role: Literal['assistant']
+    content: list[ContentBlock]
+    id: str | None = None
+    type: Literal['message'] = 'message'
+
 @dataclass
 class ReasoningPart:
-    content: str
+    summary: list[str]
+    id: str | None = None
     type: Literal['reasoning'] = 'reasoning'
 
 @dataclass
@@ -25,9 +35,10 @@ class ToolCallPart:
     tool_call_id: str
     name: str
     arguments: dict[str, Any]
+    id: str | None = None
     type: Literal['tool_call'] = 'tool_call'
 
-AssistantPart = Union[TextPart, ReasoningPart, ToolCallPart]
+AssistantPart = Union[MessagePart, ReasoningPart, ToolCallPart]
 
 @dataclass
 class AssistantMessage:

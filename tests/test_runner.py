@@ -4,7 +4,8 @@ from pathlib import Path
 from agent.context import AgentContext
 from agent.runner import agent_loop
 from llm.types import (
-    TextPart,
+    TextBlock,
+    MessagePart,
     ToolCallPart,
     ToolResultMessage,
     ToolSpec,
@@ -38,6 +39,7 @@ class FakeModelClient:
             return AssistantMessage(
                 parts=[
                     ToolCallPart(
+                        id='fc_1',
                         tool_call_id='call_1',
                         name='echo',
                         arguments={'value': 'hello'},
@@ -45,7 +47,15 @@ class FakeModelClient:
                 ]
             )
 
-        return AssistantMessage(parts=[TextPart(content='done')])
+        return AssistantMessage(
+            parts=[
+                MessagePart(
+                    id='msg_1',
+                    role='assistant',
+                    content=[TextBlock(content='done')]
+                )
+            ]
+        )
 
 
 class FakeRenderer:

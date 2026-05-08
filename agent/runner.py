@@ -39,15 +39,17 @@ async def agent_loop(
                 renderer.render(Event(
                     type='reasoning',
                     prefix='[Reasoning] ',
-                    content=part.content,
+                    content='\n'.join(part.summary),
                 ))
-            elif part.type == 'text':
-                agent_response_parts.append(part.content)
-                renderer.render(Event(
-                    type='assistant',
-                    prefix='[Assistant] ',
-                    content=part.content,
-                ))
+            elif part.type == 'message':
+                for block in part.content:
+                    if block.type == 'text':
+                        agent_response_parts.append(block.content)
+                        renderer.render(Event(
+                            type='assistant',
+                            prefix='[Assistant] ',
+                            content=block.content,
+                        ))
             elif part.type == 'tool_call':
                 has_tool_call = True
                 renderer.render(Event(

@@ -7,7 +7,8 @@ from llm.types import (
     AssistantMessage,
     SystemMessage,
     ToolSpec,
-    TextPart,
+    TextBlock,
+    MessagePart,
     ReasoningPart,
     ToolCallPart,
 )
@@ -38,20 +39,40 @@ class OpenAIResponsesClient:
                 items.append({'role': 'user', 'content': message.content})
             elif message.role == 'assistant':
                 for part in message.parts:
-                    if part.type == 'text':
-                        items.append({
-                            'role': 'assistant',
-                            'content': [{'type': 'output_text', 'text': part.content}],
-                        })
+                    if part.type == 'message':
+                        item = {
+                            'type': 'message',
+                            'role': part.role,
+                            'content': [
+                                {'type': 'output_text', 'text': block.content}
+                                for block in part.content
+                                if block.type == 'text'
+                            ],
+                        }
+                        if part.id:
+                            item['id'] = part.id
+                        items.append(item)
                     elif part.type == 'reasoning':
-                        continue
+                        item = {
+                            'type': 'reasoning',
+                            'summary': [
+                                {'type': 'summary_text', 'text': text}
+                                for text in part.summary
+                            ]
+                        }
+                        if part.id:
+                            item['id'] = part.id
+                        items.append(item)
                     elif part.type == 'tool_call':
-                        items.append({
+                        item = {
                             'type': 'function_call',
                             'call_id': part.tool_call_id,
                             'name': part.name,
                             'arguments': json.dumps(part.arguments),
-                        })
+                        }
+                        if part.id:
+                            item['id'] = part.id
+                        items.append(item)
             elif message.role == 'tool':
                 items.append({
                     'type': 'function_call_output',
@@ -77,14 +98,29 @@ class OpenAIResponsesClient:
 
         for item in response.output:
             if item.type == 'reasoning':
-                for summary in item.summary:
-                    if summary.type == 'summary_text':
-                        parts.append(ReasoningPart(content=summary.text))
+                parts.append(
+                    ReasoningPart(
+                        id=item.id,
+                        summary=[
+                            summary.text
+                            for summary in item.summary
+                            if summary.type == 'summary_text'
+                        ]
+                    )
+                )
             elif item.type == 'message':
-                for content in item.content:
-                    parts.append(TextPart(content=content.text))
+                parts.append(MessagePart(
+                    id=item.id,
+                    role='assistant',
+                    content=[
+                        TextBlock(content=content.text)
+                        for content in item.content
+                        if content.type == 'output_text'
+                    ]
+                ))
             elif item.type == 'function_call':
                 parts.append(ToolCallPart(
+                    id=item.id,
                     tool_call_id=item.call_id,
                     name=item.name,
                     arguments=json.loads(item.arguments) if item.arguments else {},
