@@ -40,18 +40,15 @@ class OpenAIResponsesClient:
             elif message.role == 'assistant':
                 for part in message.parts:
                     if part.type == 'message':
-                        item = {
+                        items.append({
                             'type': 'message',
                             'role': part.role,
                             'content': [
                                 {'type': 'output_text', 'text': block.content}
                                 for block in part.content
                                 if block.type == 'text'
-                            ],
-                        }
-                        if part.id:
-                            item['id'] = part.id
-                        items.append(item)
+                            ]
+                        })
                     elif part.type == 'reasoning':
                         item = {
                             'type': 'reasoning',
@@ -144,4 +141,5 @@ class OpenAIResponsesClient:
             reasoning={'effort': self.reasoning_effort} if self.reasoning_effort else None,
             extra_body=self.extra_body,
         )
+
         return self._to_assistant_message(response)

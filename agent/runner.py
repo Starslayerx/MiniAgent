@@ -25,16 +25,18 @@ async def agent_loop(
     renderer = context.renderer
 
     while True:
-        response: AssistantMessage = await client.create_message(
+        response = await client.create_message(
             system_message=system_message,
             messages=messages,
             tools=tools,
         )
-        messages.append(response)
 
-        agent_response_parts = []
         has_tool_call = False
+        agent_response_parts = []
+
         for part in response.parts:
+            messages.append(AssistantMessage(parts=[part]))
+
             if part.type == 'reasoning':
                 renderer.render(Event(
                     type='reasoning',
