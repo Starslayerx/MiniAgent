@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from pathlib import Path
-from openai import AsyncOpenAI
 
+from llm.base import ModelClient
 from ui.renderer import Renderer
 
 
 @dataclass
 class AgentContext:
-    client: AsyncOpenAI
-    primary_model: str
-    light_model: str
+    client: ModelClient
+    model_name: str
+    max_context_tokens: int | None
     renderer: Renderer
     workdir: Path

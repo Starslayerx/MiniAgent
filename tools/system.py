@@ -3,6 +3,7 @@ import asyncio
 from pathlib import Path
 
 from core.paths import get_current_dir
+from llm.types import ToolSpec
 
 
 class PathSecurityError(ValueError):
@@ -100,66 +101,103 @@ async def run_edit(path: str, old_content: str, new_content: str, encoding='utf-
 
 
 tools = [
-    {
-        'type': 'function',
-        'name': 'bash',
-        'description': 'Run a shell command',
-        'parameters': {
+    ToolSpec(
+        name='bash',
+        description='Run a shell command in the current workspace and return stdout/stderr.',
+        parameter_schema={
             'type': 'object',
             'properties': {
-                'command': {'type': 'string'},
-                'timeout': {'type': 'integer'},
+                'command': {
+                    'type': 'string',
+                    'description': 'Shell command to execute.',
+                },
+                'timeout': {
+                    'type': 'integer',
+                    'description': 'Command timeout in seconds. Defaults to 120.',
+                    'default': 120,
+                },
             },
             'additionalProperties': False,
             'required': ['command'],
-        },
-    },
-    {
-        'type': 'function',
-        'name': 'read_file',
-        'description': 'Read a file',
-        'parameters': {
+        }
+    ),
+    ToolSpec(
+        name='read_file',
+        description='Read a UTF-8 text file from the current workspace.',
+        parameter_schema={
             'type': 'object',
             'properties': {
-                'path': {'type': 'string'},
-                'line_limit': {'type': 'integer'},
-                'encoding': {'type': 'string'},
+                'path': {
+                    'type': 'string',
+                    'description': 'Relative path inside the current workspace.'
+                },
+                'line_limit': {
+                    'type': 'integer',
+                    'description': 'Maximum number of lines to return.',
+                    'default': 10000,
+                },
+                'encoding': {
+                    'type': 'string',
+                    'description': 'File encoding. Defaults to utf-8.',
+                    'default': 'utf-8',
+                }
             },
             'additionalProperties': False,
             'required': ['path'],
-        },
-    },
-    {
-        'type': 'function',
-        'name': 'write_file',
-        'description': 'Create a new file without overwriting any existing file',
-        'parameters': {
+        }
+    ),
+    ToolSpec(
+        name='write_file',
+        description='Create a new text file in the current workspace. Fails if the file already exists.',
+        parameter_schema={
             'type': 'object',
             'properties': {
-                'path': {'type': 'string'},
-                'content': {'type': 'string'},
-                'encoding': {'type': 'string'},
+                'path': {
+                    'type': 'string',
+                    'description': 'Relative path inside the current workspace.'
+                },
+                'content': {
+                    'type': 'string',
+                    'description': 'Completed file contents to write.',
+                },
+                'encoding': {
+                    'type': 'string',
+                    'description': 'File encoding. Defaults to utf-8.',
+                    'default': 'utf-8',
+                },
             },
             'additionalProperties': False,
             'required': ['path', 'content'],
-        },
-    },
-    {
-        'type': 'function',
-        'name': 'edit_file',
-        'description': 'Edit a file, replace old content with new content',
-        'parameters': {
+        }
+    ),
+    ToolSpec(
+        name='edit_file',
+        description='Edit an existing text file by replacing an exact text snippet.',
+        parameter_schema={
             'type': 'object',
             'properties': {
-                'path': {'type': 'string'},
-                'old_content': {'type': 'string'},
-                'new_content': {'type': 'string'},
-                'encoding': {'type': 'string'},
+                'path': {
+                    'type': 'string',
+                    'description': 'Relative path inside the current workspace.',
+                },
+                'old_content': {
+                    'type': 'string',
+                    'description': 'Exact text to replace. The edit fails if this text is not found.',
+                },
+                'new_content': {
+                    'type': 'string',
+                    'description': 'Replacement text.',
+                },
+                'encoding': {
+                    'type': 'string',
+                    'description': 'File encoding. Defaults to utf-8.',
+                    'default': 'utf-8',
+                },
             },
             'additionalProperties': False,
             'required': ['path', 'old_content', 'new_content'],
-        },
-    },
+        }
+    )
 ]
 
 tool_handlers = {

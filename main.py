@@ -1,9 +1,11 @@
 import asyncio
 from prompt_toolkit import PromptSession
-from openai import AsyncOpenAI
 
 from core.paths import get_current_dir
 from core.settings import Settings
+from llm.protocols.openai_responses import OpenAIResponsesClient
+from llm.protocols.openai_completions import OpenAICompletionsClient
+from llm.types import SystemMessage, UserMessage
 from prompts.system import SYSTEM_PROMPT
 from agent.runner import agent_loop
 from agent.context import AgentContext
@@ -15,21 +17,25 @@ from ui.input import get_input
 async def main():
     settings = Settings()
     provider = settings.get_provider()
-    client = AsyncOpenAI(
+    client = OpenAICompletionsClient(
         api_key=provider.api_key.get_secret_value(),
         base_url=provider.base_url,
+        model=provider.default_model,
+        extra_body=provider.extra_body,
+        reasoning_effort='high',
     )
-
     session = PromptSession()
     renderer = Renderer()
     work_dir = get_current_dir()
 
-    history_messages = [{'role': 'user', 'content': f'Your current work dir is `{work_dir}`'}]
+    history_messages = [UserMessage(content=f'Your current work dir is `{work_dir}`')]
+
+    model_config = provider.get_model_config(provider.default_model)
 
     context = AgentContext(
         client=client,
-        primary_model=provider.model.primary,
-        light_model=provider.model.light,
+        model_name=provider.default_model,
+        max_context_tokens=model_config.max_context_tokens if model_config else None,
         renderer=renderer,
         workdir=work_dir,
     )
@@ -49,11 +55,11 @@ async def main():
             print('Bye~')
             break
 
-        history_messages.append({'role': 'user', 'content': query})
+        history_messages.append(UserMessage(content=query))
 
         await agent_loop(
             context=context,
-            system_prompt=SYSTEM_PROMPT,
+            system_message=SystemMessage(content=SYSTEM_PROMPT),
             messages=history_messages,
             tools=root_tools,
             tool_handlers=root_tool_handlers,

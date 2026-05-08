@@ -1,3 +1,5 @@
+from typing import Any
+from enum import StrEnum
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import (
     BaseSettings,
@@ -10,14 +12,29 @@ from pydantic_settings import (
 from core.paths import get_env_file_path, get_providers_file_path
 
 
-class AgentModelsConfig(BaseModel):
-    primary: str
-    light: str
+class ProviderProtocol(StrEnum):
+    openai_completions_api = 'openai_completions'
+    openai_responses_api = 'openai_responses'
+    anthropic_messages_api = 'anthropic_messages'
+
+class ModelConfig(BaseModel):
+    name: str
+    max_context_tokens: int | None = None
 
 class ProviderConfig(BaseModel):
+    protocol: ProviderProtocol
     base_url: str
     api_key: SecretStr | None = None
-    model: AgentModelsConfig
+    default_model: str
+    models_config: list[ModelConfig]
+    extra_body: dict[str, Any] | None = None
+    reasoning_efforts: list[str] | None = None
+
+    def get_model_config(self, model_name: str) -> ModelConfig | None:
+        return next(
+            (item for item in self.models_config if item.name == model_name),
+            None,
+        )
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
