@@ -4,7 +4,7 @@ from prompt_toolkit import PromptSession
 from core.paths import get_current_dir
 from core.settings import Settings
 from llm.protocols.openai_responses import OpenAIResponsesClient
-from llm.types import SystemMessage, UserMessage, ToolSpec
+from llm.types import SystemMessage, UserMessage
 from prompts.system import SYSTEM_PROMPT
 from agent.runner import agent_loop
 from agent.context import AgentContext
@@ -39,10 +39,6 @@ async def main():
         workdir=work_dir,
     )
     root_tools, root_tool_handlers = await build_root_registry(context)
-    root_tools = [
-        ToolSpec(name=tool['name'], description=tool['description'], parameter_schema=tool['parameters'])
-        for tool in root_tools
-    ]
 
     while True:
         try:

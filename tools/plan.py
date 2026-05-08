@@ -1,6 +1,8 @@
 from typing import Literal
 from pydantic import BaseModel, Field, Json, field_validator
 
+from llm.types import ToolSpec
+
 
 PLAN_REMINDER_INTERVAL = 3
 
@@ -70,7 +72,7 @@ class TodoManager:
 async def build_plan_registry(todo_manager: TodoManager | None = None):
     manager = todo_manager or TodoManager()
 
-    async def update_todo(items):
+    async def update_plan(items):
         try:
             args = TodoArguments(items=items)
             return manager.update(args.items)
@@ -78,26 +80,32 @@ async def build_plan_registry(todo_manager: TodoManager | None = None):
             return f'Error: {str(e)}'
 
     tools = [
-        {
-            'type': 'function',
-            'name': 'todo',
-            'description': 'Rewrite the current session plan for multi-step work',
-            'parameters': {
+        ToolSpec(
+            name='plan',
+            description='Create or replace the visible task plan for the current session.',
+            parameter_schema={
                 'type': 'object',
                 'properties': {
                     'items': {
                         'type': 'array',
+                        'description': 'Ordered plan items. Send the full updated plan each time',
+                        'maxItems': 12,
                         'items': {
                             'type': 'object',
                             'properties': {
-                                'content': {'type': 'string'},
+                                'content': {
+                                    'type': 'string',
+                                    'description': 'Short user-facing task description.',
+                                },
                                 'status': {
                                     'type': 'string',
                                     'enum': ['pending', 'in_progress', 'completed'],
+                                    'description': 'Current state of this item.',
                                 },
                                 'active_form': {
                                     'type': 'string',
-                                    'description': 'Optional present-continuous label.'
+                                    'description': 'Optional present-progress wording for the active item.',
+                                    'default': '',
                                 },
                             },
                             'additionalProperties': False,
@@ -107,13 +115,12 @@ async def build_plan_registry(todo_manager: TodoManager | None = None):
                 },
                 'additionalProperties': False,
                 'required': ['items'],
-            },
-        }
+            }
+        ),
     ]
 
     tool_handlers = {
-        'todo': update_todo,
+        'plan': update_plan,
     }
 
     return tools, tool_handlers
-
