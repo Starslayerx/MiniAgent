@@ -1,0 +1,152 @@
+import json
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletion
+
+from llm.types import (
+    AgentMessage,
+    AssistantMessage,
+    SystemMessage,
+    ToolSpec,
+    AssistantPart,
+    TextBlock,
+    MessagePart,
+    ReasoningPart,
+    ToolCallPart,
+)
+
+class OpenAICompletionsClient:
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        base_url: str,
+        model: str,
+        extra_body: str,
+        reasoning_effort: str,
+    ) -> None:
+        self.client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+        )
+        self.model = model
+        self.extra_body = extra_body
+        self.reasoning_effort = reasoning_effort
+
+    def _to_messages(
+        self,
+        *,
+        system_message: SystemMessage,
+        messages: list[AgentMessage],
+    ) -> list[dict]:
+        completion_messages = [{'role': 'system', 'content': system_message.content}]
+        pending_reasoning: str | None = None
+
+        for message in messages:
+            if message.role == 'assistant':
+                for part in message.parts:
+                    if part.type == 'reasoning':
+                        pending_reasoning = '\n'.join(part.summary)
+                    elif part.type == 'message':
+                        for block in part.content:
+                            if block.type == 'text':
+                                entry = {'role': message.role, 'content': block.content}
+                                if pending_reasoning:
+                                    entry['reasoning_content'] = pending_reasoning
+                                    pending_reasoning = None
+                                completion_messages.append(entry)
+                    elif part.type == 'tool_call':
+                        entry = {
+                            'role': message.role,
+                            'content': '',
+                            'tool_calls': [
+                                {
+                                    'id': part.tool_call_id,
+                                    'type': 'function',
+                                    'function': {
+                                        'name': part.name,
+                                        'arguments': json.dumps(part.arguments, ensure_ascii=False),
+                                    }
+                                }
+                            ],
+                        }
+                        if pending_reasoning:
+                            entry['reasoning_content'] = pending_reasoning
+                            pending_reasoning = None
+                        completion_messages.append(entry)
+            elif message.role == 'user':
+                completion_messages.append({'role': message.role, 'content': message.content})
+            elif message.role == 'tool':
+                completion_messages.append({
+                    'role': message.role,
+                    'tool_call_id': message.tool_call_id,
+                    'content': message.content,
+                })
+
+        return completion_messages
+
+    def _to_tools(
+        self,
+        *,
+        tools: list[ToolSpec],
+    ) -> list[dict]:
+        completion_tools = []
+        for tool in tools:
+            completion_tools.append({
+                'type': 'function',
+                'function': {
+                    'name': tool.name,
+                    'description': tool.description,
+                    'parameters': tool.parameter_schema,
+                },
+            })
+        return completion_tools
+
+    def _to_assistant_message(
+        self,
+        *,
+        response: ChatCompletion,
+    ) -> AssistantMessage:
+        parts: list[AssistantPart] = []
+
+        msg = response.choices[0].message
+
+        reasoning_content = getattr(msg, 'reasoning_content', None)
+        if reasoning_content:
+            parts.append(ReasoningPart(summary=[reasoning_content]))
+
+        if msg.tool_calls is None:
+            parts.append(MessagePart(
+                role='assistant',
+                id=response.id,
+                content=[TextBlock(content=msg.content)]
+            ))
+        else:
+            for tc in msg.tool_calls:
+                parts.append(ToolCallPart(
+                    tool_call_id=tc.id,
+                    name=tc.function.name,
+                    arguments=json.loads(tc.function.arguments),
+                ))
+
+        return AssistantMessage(parts=parts)
+
+
+    async def create_message(
+        self,
+        *,
+        system_message: SystemMessage,
+        messages: list[AgentMessage],
+        tools: list[ToolSpec],
+    ) -> AssistantMessage:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=self._to_messages(
+                system_message=system_message,
+                messages=messages,
+            ),
+            tools=self._to_tools(tools=tools),
+            reasoning_effort=self.reasoning_effort if self.reasoning_effort else None,
+            extra_body=self.extra_body if self.extra_body else None,
+        )
+
+        return self._to_assistant_message(response=response)
