@@ -39,7 +39,10 @@ class SkillRegistry:
         return documents
 
     def load_body_by_name(self, name: str) -> str:
-        return self.documents[name].body
+        if self.documents[name]:
+            return self.documents[name].body
+        else:
+            return f'Unknown skill: {name}'
 
 
 async def bulid_skill_registry(registry: SkillRegistry) -> str:
