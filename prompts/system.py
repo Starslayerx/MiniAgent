@@ -16,7 +16,7 @@ Your capabilities:
         name = document.manifest.name
         description = document.manifest.description
         skill_manifests.append(f'- {name}: {description}')
-    if len(skill_registry) > 0:
+    if len(skill_manifests) > 0:
         system_prompt += (
             'Available skills:\n'
             '\n'.join(skill_manifests)
