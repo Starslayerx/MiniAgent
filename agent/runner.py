@@ -57,7 +57,7 @@ async def agent_loop(
                 renderer.render(Event(
                     type='tool_call',
                     prefix=f'[ToolCall:{part.name}:{part.tool_call_id}] ',
-                    content=json.dumps(part.arguments)
+                    content=json.dumps(part.arguments, ensure_ascii=False)
                 ))
 
                 handler = tool_handlers.get(part.name)
