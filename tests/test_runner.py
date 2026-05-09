@@ -14,6 +14,7 @@ from llm.types import (
     SystemMessage,
     UserMessage,
 )
+from tools.skill import SkillRegistry
 
 class FakeModelClient:
     def __init__(self):
@@ -66,7 +67,7 @@ class FakeRenderer:
 
 
 @pytest.mark.asyncio
-async def test_agent_loop_with_tool_result_before_next_model_call():
+async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
     """Test below function
 
     1. Correct message order
@@ -76,6 +77,7 @@ async def test_agent_loop_with_tool_result_before_next_model_call():
     client = FakeModelClient()
     renderer = FakeRenderer()
     messages = [UserMessage(content='run echo')]
+    skill_reigstry = SkillRegistry(tmp_path)
 
     async def echo(value: str) -> str:
         return value
@@ -86,6 +88,7 @@ async def test_agent_loop_with_tool_result_before_next_model_call():
         max_context_tokens=None,
         renderer=renderer,
         workdir=Path.cwd(),
+        skill_reigstry=skill_reigstry,
     )
 
     result = await agent_loop(
