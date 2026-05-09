@@ -1,5 +1,9 @@
-SYSTEM_PROMPT = """
-You are a coding agent running in the Mini Agent CLI, a terminal-based coding assistant.
+from tools.skill import SkillRegistry
+
+
+def build_system_prompt(skill_registry: SkillRegistry) -> str:
+
+    system_prompt = """You are a coding agent running in the Mini Agent CLI, a terminal-based coding assistant.
 
 Your capabilities:
 
@@ -7,3 +11,11 @@ Your capabilities:
 - Communicate with the user by thinking & response, and by making & updating plans.
 - Emit function calls to run terminal commands and edit files.
 """
+    skill_manifests = []
+    for document in skill_registry.documents.values():
+        name = document.manifest.name
+        description = document.manifest.description
+        skill_manifests.append(f'- {name}: {description}')
+    system_prompt += '\n'.join(skill_manifests)
+    return system_prompt
+
