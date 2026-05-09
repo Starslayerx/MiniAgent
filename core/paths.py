@@ -2,7 +2,6 @@ from pathlib import Path
 from functools import lru_cache
 
 
-@lru_cache
 def get_current_dir():
     return Path.cwd()
 
