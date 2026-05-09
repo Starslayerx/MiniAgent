@@ -13,9 +13,10 @@ Your capabilities:
 """
     skill_manifests = []
     for document in skill_registry.documents.values():
+        path = document.manifest.path
         name = document.manifest.name
         description = document.manifest.description
-        skill_manifests.append(f'- {name}: {description}')
+        skill_manifests.append(f'- {name} skill at {path}: {description}')
     if len(skill_manifests) > 0:
         system_prompt += (
             'Available skills:\n'
