@@ -45,7 +45,7 @@ async def main():
 
     while True:
         try:
-            query = await get_input(session, prompt='>>>')
+            query = await get_input(session, prompt='⚡')
         except KeyboardInterrupt:
             print('^C')
             continue
