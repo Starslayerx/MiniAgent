@@ -61,7 +61,9 @@ async def bulid_skill_registry(registry: SkillRegistry) -> str:
                         'type': 'string',
                         'description': 'Skill name.',
                     }
-                }
+                },
+                'additionalProperties': False,
+                'required': ['name'],
             }
         )
     ]

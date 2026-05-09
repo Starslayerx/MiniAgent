@@ -34,9 +34,8 @@ async def agent_loop(
         has_tool_call = False
         agent_response_parts = []
 
+        messages.append(response)
         for part in response.parts:
-            messages.append(AssistantMessage(parts=[part]))
-
             if part.type == 'reasoning':
                 renderer.render(Event(
                     type='reasoning',
