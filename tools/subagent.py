@@ -1,6 +1,6 @@
 from agent.runner import agent_loop
 from agent.context import AgentContext
-from prompts import SYSTEM_PROMPT
+from prompts import build_system_prompt
 
 from .plan import build_plan_registry
 from llm.types import (
@@ -25,7 +25,7 @@ async def build_subagent_registry(
         messages = [UserMessage(content=prompt)]
         return await agent_loop(
             context=context,
-            system_message=SystemMessage(content=SYSTEM_PROMPT),
+            system_message=SystemMessage(content=build_system_prompt(context.skill_reigstry)),
             messages=messages,
             tools=child_tools,
             tool_handlers=subagent_tool_handlers,

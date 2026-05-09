@@ -1,4 +1,4 @@
-provider = 'dashscope'
+provider = 'deepseek'
 
 [providers.dashscope]
 protocol = 'openai_responses'

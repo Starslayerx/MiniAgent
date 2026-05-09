@@ -1,15 +1,16 @@
 import asyncio
 from prompt_toolkit import PromptSession
 
-from core.paths import get_current_dir
+from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
 from llm.protocols.openai_responses import OpenAIResponsesClient
 from llm.protocols.openai_completions import OpenAICompletionsClient
 from llm.types import SystemMessage, UserMessage
-from prompts.system import SYSTEM_PROMPT
+from prompts.system import build_system_prompt
 from agent.runner import agent_loop
 from agent.context import AgentContext
 from tools.registry import build_root_registry
+from tools.skill import SkillRegistry
 from ui.renderer import Renderer
 from ui.input import get_input
 
@@ -38,12 +39,13 @@ async def main():
         max_context_tokens=model_config.max_context_tokens if model_config else None,
         renderer=renderer,
         workdir=work_dir,
+        skill_reigstry=SkillRegistry(get_skills_dir()),
     )
     root_tools, root_tool_handlers = await build_root_registry(context)
 
     while True:
         try:
-            query = await get_input(session, prompt='>>>')
+            query = await get_input(session, prompt='⚡')
         except KeyboardInterrupt:
             print('^C')
             continue
@@ -55,11 +57,16 @@ async def main():
             print('Bye~')
             break
 
+        system_message = SystemMessage(
+            content=build_system_prompt(
+                skill_registry=context.skill_reigstry,
+            ),
+        )
         history_messages.append(UserMessage(content=query))
 
         await agent_loop(
             context=context,
-            system_message=SystemMessage(content=SYSTEM_PROMPT),
+            system_message=system_message,
             messages=history_messages,
             tools=root_tools,
             tool_handlers=root_tool_handlers,

@@ -43,6 +43,7 @@ class OpenAICompletionsClient:
 
         for message in messages:
             if message.role == 'assistant':
+                tool_calls = []
                 for part in message.parts:
                     if part.type == 'reasoning':
                         pending_reasoning = '\n'.join(part.summary)
@@ -55,24 +56,24 @@ class OpenAICompletionsClient:
                                     pending_reasoning = None
                                 completion_messages.append(entry)
                     elif part.type == 'tool_call':
-                        entry = {
-                            'role': message.role,
-                            'content': '',
-                            'tool_calls': [
-                                {
-                                    'id': part.tool_call_id,
-                                    'type': 'function',
-                                    'function': {
-                                        'name': part.name,
-                                        'arguments': json.dumps(part.arguments, ensure_ascii=False),
-                                    }
-                                }
-                            ],
-                        }
-                        if pending_reasoning:
-                            entry['reasoning_content'] = pending_reasoning
-                            pending_reasoning = None
-                        completion_messages.append(entry)
+                        tool_calls.append({
+                            'id': part.tool_call_id,
+                            'type': 'function',
+                            'function': {
+                                'name': part.name,
+                                'arguments': json.dumps(part.arguments, ensure_ascii=False),
+                            }
+                        })
+                if tool_calls:
+                    entry = {
+                        'role': message.role,
+                        'content': '',
+                        'tool_calls': tool_calls,
+                    }
+                    if pending_reasoning:
+                        entry['reasoning_content'] = pending_reasoning
+                        pending_reasoning = None
+                    completion_messages.append(entry)
             elif message.role == 'user':
                 completion_messages.append({'role': message.role, 'content': message.content})
             elif message.role == 'tool':

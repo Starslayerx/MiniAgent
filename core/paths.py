@@ -21,3 +21,6 @@ def get_env_file_path(filename: str = '.env'):
 def get_providers_file_path(filename: str = 'providers.toml'):
     return get_root_dir() / filename
 
+@lru_cache
+def get_skills_dir():
+    return get_root_dir() / 'skills'
