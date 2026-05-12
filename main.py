@@ -16,9 +16,11 @@ from ui.input import get_input
 
 async def main():
     settings = Settings()
-    provider = settings.get_provider()
+    provider, protocol, protocol_config = settings.get_protocol_config()
     client = create_client(
         provider=provider,
+        protocol=protocol,
+        protocol_config=protocol_config,
         model=provider.default_model,
         reasoning_effort='high',
     )

@@ -16,15 +16,17 @@ CLIENT_REGISTRY: dict[ProviderProtocol, Type[ModelClient]] = {
 def create_client(
     *,
     provider: ProviderConfig,
+    protocol: str,
+    protocol_config: dict,
     model: str | None = None,
     reasoning_effort: str | None = None,
 ) -> ModelClient:
-    client_cls = CLIENT_REGISTRY[provider.protocol]
+    client_cls = CLIENT_REGISTRY[protocol]
 
     return client_cls(
         api_key=provider.api_key.get_secret_value(),
-        base_url=provider.base_url,
+        base_url=protocol_config.base_url,
         model=model or provider.default_model,
-        extra_body=provider.extra_body,
+        extra_body=getattr(provider, 'extra_body', None),
         reasoning_effort=reasoning_effort,
     )

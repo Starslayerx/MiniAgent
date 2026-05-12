@@ -21,14 +21,19 @@ class ModelConfig(BaseModel):
     name: str
     max_context_tokens: int | None = None
 
-class ProviderConfig(BaseModel):
-    protocol: ProviderProtocol
+class ProtocolConfig(BaseModel):
     base_url: str
-    api_key: SecretStr | None = None
-    default_model: str
-    models_config: list[ModelConfig]
     extra_body: dict[str, Any] | None = None
     reasoning_efforts: list[str] | None = None
+    max_tokens: int | None = None
+    budget_tokens: int | None = None
+
+class ProviderConfig(BaseModel):
+    api_key: SecretStr | None = None
+    default_protocol: ProviderProtocol
+    protocols: dict[ProviderProtocol, ProtocolConfig]
+    default_model: str
+    models_config: list[ModelConfig]
 
     def get_model_config(self, model_name: str) -> ModelConfig | None:
         return next(
@@ -77,3 +82,15 @@ class Settings(BaseSettings):
             return self.providers[provider_name]
         except KeyError as exc:
             raise ValueError(f'Unknown provider: {provider_name}') from exc
+
+    def get_protocol_config(
+        self,
+        provider_name: str | None = None,
+        protocol: ProviderProtocol | None = None,
+    ) -> tuple[ProviderConfig, ProviderProtocol, ProtocolConfig]:
+        provider = self.get_provider(provider_name)
+        selected_protocol = protocol or provider.default_protocol
+        try:
+            return provider, selected_protocol, provider.protocols[selected_protocol]
+        except KeyError as exc:
+            raise ValueError(f'Unknown protocol for provider: {selected_protocol}') from exc

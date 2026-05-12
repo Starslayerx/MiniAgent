@@ -1,34 +1,34 @@
 provider = 'deepseek'
 
-[providers.dashscope]
-protocol = 'openai_responses'
-base_url = 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
-api_key = 'sk-***'
-default_model = 'qwen3.6-35b-a3b'
-models_config = [
-    { name = 'qwen3.6-35b-a3b', max_context_tokens = 256000 },
-    { name = 'qwen3.5-397b-a17b', max_context_tokens = 256000 },
-]
-extra_body = { enable_thinking = true }
-
 [providers.deepseek]
-protocol = 'anthropic_messages'
-base_url = 'https://api.deepseek.com/anthropic'
 api_key = 'sk-***'
+default_protocol = 'anthropic_messages'
 default_model = 'deepseek-v4-flash'
 models_config = [
     { name = 'deepseek-v4-flash', max_context_tokens = 1000000 },
     { name = 'deepseek-v4-pro', max_context_tokens = 1000000 },
 ]
-extra_body = { thinking = {type = 'enabled' }}
+
+[providers.deepseek.protocols.openai_completions]
+base_url = 'https://api.deepseek.com'
+extra_body = { thinking = { type = 'enabled' }}
 reasoning_efforts = ['high', 'max']
 
-[providers.zeabur]
-protocol = 'openai_completions'
-base_url = 'https://hnd1.aihub.zeabur.ai'
-api_key = 'sk-**'
-default_model = 'gpt-4.1-mini'
+[providers.deepseek.protocols.anthropic_messages]
+base_url = 'https://api.deepseek.com/anthropic'
+max_tokens = 4096  # max output
+budget_tokens = 1024  # thinking depth
+
+
+[providers.dashscope]
+api_key = 'sk-***'
+default_protocol = 'openai_responses'
+default_model = 'qwen3.6-35b-a3b'
 models_config = [
-    { name = 'gpt-4.1-mini', max_context_tokens = 128000 },
-    { name = 'gpt-5-mini', max_context_tokens = 128000 },
+    { name = 'qwen3.6-35b-a3b', max_context_tokens = 256000 },
+    { name = 'qwen3.5-397b-a17b', max_context_tokens = 256000 },
 ]
+
+[providers.dashscope.protocols.openai_responses]
+base_url = 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
+extra_body = { enable_thinking = true }
