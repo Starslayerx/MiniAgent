@@ -32,11 +32,11 @@ async def agent_loop(
         )
 
         has_tool_call = False
+        agent_response_parts = []
 
         messages.append(response)
         tool_results = []
 
-        messages.append(response)
         for part in response.parts:
             if part.type == 'reasoning' and part.summary:
                 renderer.render(Event(
@@ -47,6 +47,7 @@ async def agent_loop(
             elif part.type == 'message':
                 for block in part.content:
                     if block.type == 'text':
+                        agent_response_parts.append(block.content)
                         renderer.render(Event(
                             type='assistant',
                             prefix='[Assistant] ',
@@ -83,4 +84,4 @@ async def agent_loop(
 
         messages.extend(tool_results)
         if not has_tool_call:
-            break
+            return ''.join(agent_response_parts)
