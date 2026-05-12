@@ -133,13 +133,17 @@ class OpenAIResponsesClient:
         messages: list[AgentMessage],
         tools: list[ToolSpec],
     ) -> AssistantMessage:
-        response = await self.client.responses.create(
-            model=self.model,
-            instructions=system_message.content,
-            input=self._to_input(messages),
-            tools=self._to_tools(tools),
-            reasoning={'effort': self.reasoning_effort} if self.reasoning_effort else None,
-            extra_body=self.extra_body,
-        )
+        kwargs = {
+            'model': self.model,
+            'instructions': system_message.content,
+            'input': self._to_input(messages),
+            'tools': self._to_tools(tools),
+        }
+        if self.reasoning_effort:
+            kwargs['reasoning'] = {'effort': self.reasoning_effort}
+        if self.extra_body:
+            kwargs['extra_body'] = self.extra_body
+
+        response = await self.client.responses.create(**kwargs)
 
         return self._to_assistant_message(response)

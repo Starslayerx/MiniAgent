@@ -1,4 +1,5 @@
 import json
+from typing import Any
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
@@ -21,8 +22,8 @@ class OpenAICompletionsClient:
         api_key: str,
         base_url: str,
         model: str,
-        extra_body: str,
-        reasoning_effort: str,
+        extra_body: dict[str, Any] | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
         self.client = AsyncOpenAI(
             api_key=api_key,
@@ -139,15 +140,19 @@ class OpenAICompletionsClient:
         messages: list[AgentMessage],
         tools: list[ToolSpec],
     ) -> AssistantMessage:
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=self._to_messages(
+        kwargs = {
+            'model': self.model,
+            'messages': self._to_messages(
                 system_message=system_message,
                 messages=messages,
             ),
-            tools=self._to_tools(tools=tools),
-            reasoning_effort=self.reasoning_effort if self.reasoning_effort else None,
-            extra_body=self.extra_body if self.extra_body else None,
-        )
+            'tools': self._to_tools(tools=tools),
+        }
+        if self.reasoning_effort:
+            kwargs['reasoning_effort'] = self.reasoning_effort
+        if self.extra_body:
+            kwargs['extra_body'] = self.extra_body
+
+        response = await self.client.chat.completions.create(**kwargs)
 
         return self._to_assistant_message(response=response)
