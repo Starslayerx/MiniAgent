@@ -3,8 +3,7 @@ from prompt_toolkit import PromptSession
 
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
-from llm.protocols.openai_responses import OpenAIResponsesClient
-from llm.protocols.openai_completions import OpenAICompletionsClient
+from llm.protocols import create_client
 from llm.types import SystemMessage, UserMessage
 from prompts.system import build_system_prompt
 from agent.runner import agent_loop
@@ -17,13 +16,18 @@ from ui.input import get_input
 
 async def main():
     settings = Settings()
-    provider = settings.get_provider()
-    client = OpenAICompletionsClient(
-        api_key=provider.api_key.get_secret_value(),
-        base_url=provider.base_url,
+    provider, protocol, protocol_config = settings.get_protocol_config()
+
+    reasoning_effort = None
+    if reason_efforts := getattr(protocol_config, 'reasoning_efforts'):
+        reasoning_effort = reason_efforts[0]
+
+    client = create_client(
+        provider=provider,
+        protocol=protocol,
+        protocol_config=protocol_config,
         model=provider.default_model,
-        extra_body=provider.extra_body,
-        reasoning_effort='high',
+        reasoning_effort=reasoning_effort,
     )
     session = PromptSession()
     renderer = Renderer()

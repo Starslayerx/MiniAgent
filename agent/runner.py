@@ -2,7 +2,6 @@ import json
 
 from agent.context import AgentContext
 from llm.types import (
-    AssistantMessage,
     SystemMessage,
     AgentMessage,
     ToolSpec,
@@ -35,8 +34,10 @@ async def agent_loop(
         agent_response_parts = []
 
         messages.append(response)
+        tool_results = []
+
         for part in response.parts:
-            if part.type == 'reasoning':
+            if part.type == 'reasoning' and part.summary:
                 renderer.render(Event(
                     type='reasoning',
                     prefix='[Reasoning] ',
@@ -67,20 +68,19 @@ async def agent_loop(
                     is_error = True
                     result = f'Unknown tool {part.name}'
 
+                tool_results.append(ToolResultMessage(
+                    tool_call_id=part.tool_call_id,
+                    name=part.name,
+                    content=result,
+                    is_error=is_error,
+                ))
+
                 renderer.render(Event(
                     type='tool_result',
                     prefix=f'[ToolResult:{part.name}] ',
                     content=result,
                 ))
 
-                messages.append(
-                    ToolResultMessage(
-                        tool_call_id=part.tool_call_id,
-                        name=part.name,
-                        content=result,
-                        is_error=is_error,
-                    ),
-                )
-
+        messages.extend(tool_results)
         if not has_tool_call:
             return ''.join(agent_response_parts)

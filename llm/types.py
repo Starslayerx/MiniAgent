@@ -28,6 +28,8 @@ class MessagePart:
 class ReasoningPart:
     summary: list[str]
     id: str | None = None
+    signature: str | None = None
+    redacted_data: str | None = None
     type: Literal['reasoning'] = 'reasoning'
 
 @dataclass
@@ -49,7 +51,7 @@ class AssistantMessage:
 @dataclass(slots=True)
 class ToolResultMessage:
     tool_call_id: str
-    name: str
+    name: str | None
     content: str
     is_error: bool = False
     role: Literal['tool'] = 'tool'
