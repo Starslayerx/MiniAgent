@@ -38,7 +38,7 @@ async def agent_loop(
 
         messages.append(response)
         for part in response.parts:
-            if part.type == 'reasoning':
+            if part.type == 'reasoning' and part.summary:
                 renderer.render(Event(
                     type='reasoning',
                     prefix='[Reasoning] ',

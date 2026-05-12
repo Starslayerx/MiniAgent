@@ -8,9 +8,7 @@ from llm.types import (
     SystemMessage,
     UserMessage,
     ToolSpec,
-    AssistantPart,
     TextBlock,
-    ContentBlock,
     MessagePart,
     ReasoningPart,
     ToolCallPart,
@@ -32,6 +30,7 @@ class AnthropicMessagesClient:
         )
         self.model = model
         self.reasoning_effort = reasoning_effort
+        self.extra_body = extra_body
 
     def _to_messages(
         self,
@@ -132,7 +131,7 @@ class AnthropicMessagesClient:
                         role='assistant',
                         content=[TextBlock(content=content.text)],
                     ))
-                if content.type == 'thinking':
+                elif content.type == 'thinking':
                     parts.append(ReasoningPart(
                         summary=[content.thinking],
                         signature=content.signature,
@@ -143,6 +142,11 @@ class AnthropicMessagesClient:
                         tool_call_id=content.id,
                         name=content.name,
                         arguments=content.input,
+                    ))
+                elif content.type == 'redacted_thinking':
+                    parts.append(ReasoningPart(
+                        summary=[],
+                        redacted_data=content.data,
                     ))
             return AssistantMessage(parts=parts)
         elif message.role == 'user':
