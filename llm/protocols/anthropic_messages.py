@@ -21,16 +21,16 @@ class AnthropicMessagesClient:
         api_key: str,
         base_url: str,
         model: str,
-        reasoning_effort: str,
-        extra_body: dict,
+        max_tokens: int | None = None,
+        budget_tokens: int | None = None,
     ) -> None:
         self.client = AsyncAnthropic(
             api_key=api_key,
             base_url=base_url,
         )
         self.model = model
-        self.reasoning_effort = reasoning_effort
-        self.extra_body = extra_body
+        self.max_tokens = max_tokens or 4096
+        self.budget_tokens = budget_tokens or 1024
 
     def _to_messages(
         self,
@@ -169,13 +169,13 @@ class AnthropicMessagesClient:
     ) -> AssistantMessage:
         response = await self.client.messages.create(
             model=self.model,
-            max_tokens=4096,
+            max_tokens=self.max_tokens,
             system=system_message.content,
             messages=self._to_messages(messages=messages),
             tools=self._to_tools(tools=tools),
             thinking={
                 'type': 'enabled',
-                'budget_tokens': 1024,
-            } if self.reasoning_effort else None,
+                'budget_tokens': self.budget_tokens,
+            },
         )
         return self._to_assistant_message(message=response)

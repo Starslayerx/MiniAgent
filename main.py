@@ -17,12 +17,17 @@ from ui.input import get_input
 async def main():
     settings = Settings()
     provider, protocol, protocol_config = settings.get_protocol_config()
+
+    reasoning_effort = None
+    if reason_efforts := getattr(protocol_config, 'reasoning_efforts'):
+        reasoning_effort = reason_efforts[0]
+
     client = create_client(
         provider=provider,
         protocol=protocol,
         protocol_config=protocol_config,
         model=provider.default_model,
-        reasoning_effort='high',
+        reasoning_effort=reasoning_effort,
     )
     session = PromptSession()
     renderer = Renderer()
