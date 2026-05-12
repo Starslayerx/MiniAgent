@@ -2,7 +2,6 @@ import json
 
 from agent.context import AgentContext
 from llm.types import (
-    AssistantMessage,
     SystemMessage,
     AgentMessage,
     ToolSpec,
