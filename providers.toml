@@ -12,8 +12,8 @@ models_config = [
 extra_body = { enable_thinking = true }
 
 [providers.deepseek]
-protocol = 'openai_completions'
-base_url = 'https://api.deepseek.com'
+protocol = 'anthropic_messages'
+base_url = 'https://api.deepseek.com/anthropic'
 api_key = 'sk-***'
 default_model = 'deepseek-v4-flash'
 models_config = [
@@ -22,3 +22,13 @@ models_config = [
 ]
 extra_body = { thinking = {type = 'enabled' }}
 reasoning_efforts = ['high', 'max']
+
+[providers.zeabur]
+protocol = 'openai_completions'
+base_url = 'https://hnd1.aihub.zeabur.ai'
+api_key = 'sk-**'
+default_model = 'gpt-4.1-mini'
+models_config = [
+    { name = 'gpt-4.1-mini', max_context_tokens = 128000 },
+    { name = 'gpt-5-mini', max_context_tokens = 128000 },
+]

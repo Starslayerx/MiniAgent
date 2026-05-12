@@ -3,8 +3,11 @@ from prompt_toolkit import PromptSession
 
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
-from llm.protocols.openai_responses import OpenAIResponsesClient
-from llm.protocols.openai_completions import OpenAICompletionsClient
+from llm.protocols import (
+    OpenAICompletionsClient,
+    OpenAIResponsesClient,
+    AnthropicMessagesClient
+)
 from llm.types import SystemMessage, UserMessage
 from prompts.system import build_system_prompt
 from agent.runner import agent_loop
@@ -18,7 +21,7 @@ from ui.input import get_input
 async def main():
     settings = Settings()
     provider = settings.get_provider()
-    client = OpenAICompletionsClient(
+    client = AnthropicMessagesClient(
         api_key=provider.api_key.get_secret_value(),
         base_url=provider.base_url,
         model=provider.default_model,

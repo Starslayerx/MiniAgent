@@ -32,7 +32,9 @@ async def agent_loop(
         )
 
         has_tool_call = False
-        agent_response_parts = []
+
+        messages.append(response)
+        tool_results = []
 
         messages.append(response)
         for part in response.parts:
@@ -45,7 +47,6 @@ async def agent_loop(
             elif part.type == 'message':
                 for block in part.content:
                     if block.type == 'text':
-                        agent_response_parts.append(block.content)
                         renderer.render(Event(
                             type='assistant',
                             prefix='[Assistant] ',
@@ -67,20 +68,19 @@ async def agent_loop(
                     is_error = True
                     result = f'Unknown tool {part.name}'
 
+                tool_results.append(ToolResultMessage(
+                    tool_call_id=part.tool_call_id,
+                    name=part.name,
+                    content=result,
+                    is_error=is_error,
+                ))
+
                 renderer.render(Event(
                     type='tool_result',
                     prefix=f'[ToolResult:{part.name}] ',
                     content=result,
                 ))
 
-                messages.append(
-                    ToolResultMessage(
-                        tool_call_id=part.tool_call_id,
-                        name=part.name,
-                        content=result,
-                        is_error=is_error,
-                    ),
-                )
-
+        messages.extend(tool_results)
         if not has_tool_call:
-            return ''.join(agent_response_parts)
+            break
