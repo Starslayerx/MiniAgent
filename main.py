@@ -4,7 +4,7 @@ from prompt_toolkit import PromptSession
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
 from llm.protocols import create_client
-from llm.types import SystemMessage, UserMessage
+from llm.types import SystemMessage, TokenUsage, UserMessage
 from prompts.system import build_system_prompt
 from agent.runner import agent_loop
 from agent.context import AgentContext
@@ -47,6 +47,7 @@ async def main():
     )
     root_tools, root_tool_handlers = await build_root_registry(context)
 
+    totoal_cost = 0
     while True:
         try:
             query = await get_input(session, prompt='⚡')
@@ -54,11 +55,11 @@ async def main():
             print('^C')
             continue
         except EOFError:
-            print('Bye~')
+            print(f'Total const {totoal_cost} tokens.')
             break
 
         if query.strip().lower() in ('q', 'exit'):
-            print('Bye~')
+            print(f'Total const {totoal_cost} tokens.')
             break
 
         system_message = SystemMessage(
@@ -68,6 +69,7 @@ async def main():
         )
         history_messages.append(UserMessage(content=query))
 
+        context.current_turn_usage = TokenUsage()
         await agent_loop(
             context=context,
             system_message=system_message,
@@ -75,6 +77,7 @@ async def main():
             tools=root_tools,
             tool_handlers=root_tool_handlers,
         )
+        totoal_cost += context.current_turn_usage.total_tokens
 
 if __name__ == '__main__':
     asyncio.run(main())
