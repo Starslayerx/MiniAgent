@@ -39,7 +39,7 @@ class OpenAICompletionsClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-    ) -> list[ChatCompletion]:
+    ) -> list[dict[str, Any]]:
         completion_messages = [{'role': 'system', 'content': system_message.content}]
         pending_reasoning: str | None = None
 

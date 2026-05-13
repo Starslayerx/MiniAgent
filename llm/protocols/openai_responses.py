@@ -34,7 +34,7 @@ class OpenAIResponsesClient:
         self.extra_body = extra_body
         self.reasoning_effort = reasoning_effort
 
-    def _to_input(self, messages: list[AgentMessage]) -> list[Response]:
+    def _to_input(self, messages: list[AgentMessage]) -> list[dict[str, Any]]:
         items = []
         for message in messages:
             if message.role == 'user':
@@ -96,7 +96,7 @@ class OpenAIResponsesClient:
         raw_usage = getattr(response, 'usage', None)
         usage = None
         if raw_usage:
-            details = getattr(raw_usage, 'output_token_details', None)
+            details = getattr(raw_usage, 'output_tokens_details', None)
             usage = TokenUsage(
                 input_tokens=getattr(raw_usage, 'input_tokens', 0) or 0,
                 output_tokens=getattr(raw_usage, 'output_tokens', 0) or 0,

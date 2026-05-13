@@ -59,20 +59,17 @@ class TokenUsage:
         if other.reasoning_tokens is not None:
             self.reasoning_tokens = (
                 self.reasoning_tokens or 0
-                + other.reasoning_tokens
-            )
+            ) + other.reasoning_tokens
 
         if other.cache_creation_input_tokens is not None:
             self.cache_creation_input_tokens = (
                 self.cache_creation_input_tokens or 0
-                + other.cache_creation_input_tokens
-            )
+            ) + other.cache_creation_input_tokens
 
         if other.cache_read_input_tokens is not None:
             self.cache_read_input_tokens = (
-                self.cache_read_input_tokens or 0 
-                + other.cache_read_input_tokens
-            )
+                self.cache_read_input_tokens or 0
+            ) + other.cache_read_input_tokens
 
 @dataclass
 class AssistantMessage:

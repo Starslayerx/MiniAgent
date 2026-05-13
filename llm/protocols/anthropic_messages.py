@@ -1,4 +1,6 @@
 from anthropic import AsyncAnthropic
+from typing import Any
+
 from anthropic.types import Message
 
 from llm.types import (
@@ -36,7 +38,7 @@ class AnthropicMessagesClient:
         self,
         *,
         messages: list[AgentMessage],
-    ) -> list[Message]:
+    ) -> list[dict[str, Any]]:
 
         def _append_message(output_messages: list, role: str, blocks: list):
             if not blocks:
