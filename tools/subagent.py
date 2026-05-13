@@ -29,6 +29,7 @@ async def build_subagent_registry(
             messages=messages,
             tools=child_tools,
             tool_handlers=subagent_tool_handlers,
+            show_turn_usage=False,
         )
 
     tools = [
