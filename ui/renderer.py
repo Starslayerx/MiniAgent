@@ -20,6 +20,9 @@ style = Style.from_dict({
     # error
     'error.prefix': 'ansired bold',
     'error.content': 'ansired',
+    # usage
+    'usage.prefix': 'ansibrightblue bold',
+    'usage.content': 'ansibrightblue',
 })
 
 EventType = Literal[
@@ -28,6 +31,7 @@ EventType = Literal[
     'tool_call',
     'tool_result',
     'error',
+    'usage',
 ]
 
 @dataclass

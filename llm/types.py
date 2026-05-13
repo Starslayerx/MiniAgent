@@ -43,8 +43,41 @@ class ToolCallPart:
 AssistantPart = Union[MessagePart, ReasoningPart, ToolCallPart]
 
 @dataclass
+class TokenUsage:
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    reasoning_tokens: int | None = None
+    cache_read_input_tokens: int | None = None
+    cache_creation_input_tokens: int | None = None
+
+    def add(self, other: TokenUsage) -> None:
+        self.input_tokens += other.input_tokens
+        self.output_tokens += other.output_tokens
+        self.total_tokens += other.total_tokens
+
+        if other.reasoning_tokens is not None:
+            self.reasoning_tokens = (
+                self.reasoning_tokens or 0
+                + other.reasoning_tokens
+            )
+
+        if other.cache_creation_input_tokens is not None:
+            self.cache_creation_input_tokens = (
+                self.cache_creation_input_tokens or 0
+                + other.cache_creation_input_tokens
+            )
+
+        if other.cache_read_input_tokens is not None:
+            self.cache_read_input_tokens = (
+                self.cache_read_input_tokens or 0 
+                + other.cache_read_input_tokens
+            )
+
+@dataclass
 class AssistantMessage:
     parts: list[AssistantPart]
+    usage: TokenUsage | None = None
     role: Literal['assistant'] = 'assistant'
 
 

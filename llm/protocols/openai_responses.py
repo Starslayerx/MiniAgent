@@ -1,6 +1,7 @@
 import json
 from typing import Any
 from openai import AsyncOpenAI
+from openai.types.responses import Response
 
 from llm.types import (
     AgentMessage,
@@ -11,6 +12,7 @@ from llm.types import (
     MessagePart,
     ReasoningPart,
     ToolCallPart,
+    TokenUsage,
 )
 
 
@@ -32,7 +34,7 @@ class OpenAIResponsesClient:
         self.extra_body = extra_body
         self.reasoning_effort = reasoning_effort
 
-    def _to_input(self, messages: list[AgentMessage]) -> list[dict]:
+    def _to_input(self, messages: list[AgentMessage]) -> list[Response]:
         items = []
         for message in messages:
             if message.role == 'user':
@@ -90,7 +92,18 @@ class OpenAIResponsesClient:
             for tool in tools
         ]
 
-    def _to_assistant_message(self, response: Any) -> AssistantMessage:
+    def _to_assistant_message(self, response: Response) -> AssistantMessage:
+        raw_usage = getattr(response, 'usage', None)
+        usage = None
+        if raw_usage:
+            details = getattr(raw_usage, 'output_token_details', None)
+            usage = TokenUsage(
+                input_tokens=getattr(raw_usage, 'input_tokens', 0) or 0,
+                output_tokens=getattr(raw_usage, 'output_tokens', 0) or 0,
+                total_tokens=getattr(raw_usage, 'total_tokens', 0) or 0,
+                reasoning_tokens=getattr(details, 'reasoning_tokens', 0),
+            )
+
         parts = []
 
         for item in response.output:
@@ -123,7 +136,7 @@ class OpenAIResponsesClient:
                     arguments=json.loads(item.arguments) if item.arguments else {},
                 ))
 
-        return AssistantMessage(parts=parts)
+        return AssistantMessage(parts=parts, usage=usage)
 
 
     async def create_message(

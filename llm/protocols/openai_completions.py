@@ -13,6 +13,7 @@ from llm.types import (
     MessagePart,
     ReasoningPart,
     ToolCallPart,
+    TokenUsage,
 )
 
 class OpenAICompletionsClient:
@@ -38,7 +39,7 @@ class OpenAICompletionsClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-    ) -> list[dict]:
+    ) -> list[ChatCompletion]:
         completion_messages = [{'role': 'system', 'content': system_message.content}]
         pending_reasoning: str | None = None
 
@@ -109,8 +110,17 @@ class OpenAICompletionsClient:
         response: ChatCompletion,
     ) -> AssistantMessage:
         parts: list[AssistantPart] = []
-
         msg = response.choices[0].message
+
+        usage = None
+        if usage := response.usage:
+            details = getattr(usage, 'completion_tokens_details', None)
+            usage = TokenUsage(
+                input_tokens=usage.prompt_tokens or 0,
+                output_tokens=usage.completion_tokens or 0,
+                total_tokens=usage.total_tokens or 0,
+                reasoning_tokens=getattr(details, 'reasoning_tokens', 0),
+            )
 
         reasoning_content = getattr(msg, 'reasoning_content', None)
         if reasoning_content:
@@ -130,7 +140,7 @@ class OpenAICompletionsClient:
                     arguments=json.loads(tc.function.arguments),
                 ))
 
-        return AssistantMessage(parts=parts)
+        return AssistantMessage(parts=parts, usage=usage)
 
 
     async def create_message(
