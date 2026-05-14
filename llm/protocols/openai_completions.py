@@ -114,12 +114,13 @@ class OpenAICompletionsClient:
 
         usage = None
         if usage := response.usage:
-            details = getattr(usage, 'completion_tokens_details', None)
+            completion_details = getattr(usage, 'completion_tokens_details', None)
+            prompt_details = getattr(usage, 'prompt_tokens_details', None)
             usage = TokenUsage(
                 input_tokens=usage.prompt_tokens or 0,
                 output_tokens=usage.completion_tokens or 0,
-                total_tokens=usage.total_tokens or 0,
-                reasoning_tokens=getattr(details, 'reasoning_tokens', 0),
+                input_cache_read_tokens=getattr(prompt_details, 'cached_tokens', 0) or 0,
+                output_reasoning_tokens=getattr(completion_details, 'reasoning_tokens', 0) or 0,
             )
 
         reasoning_content = getattr(msg, 'reasoning_content', None)
@@ -148,7 +149,7 @@ class OpenAICompletionsClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-        tools: list[ToolSpec],
+        tools: list[ToolSpec] | None = None,
     ) -> AssistantMessage:
         kwargs = {
             'model': self.model,
@@ -156,8 +157,9 @@ class OpenAICompletionsClient:
                 system_message=system_message,
                 messages=messages,
             ),
-            'tools': self._to_tools(tools=tools),
         }
+        if tools:
+            kwargs['tools'] = self._to_tools(tools=tools)
         if self.reasoning_effort:
             kwargs['reasoning_effort'] = self.reasoning_effort
         if self.extra_body:

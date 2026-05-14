@@ -127,13 +127,13 @@ class AnthropicMessagesClient:
     def _to_assistant_message(self, *, message: Message) -> AssistantMessage:
         usage = None
         if usage:= message.usage:
+            cache_read_tokens = usage.cache_read_input_tokens or 0
+            cache_creation_tokens = usage.cache_creation_input_tokens or 0
             usage = TokenUsage(
-                input_tokens=usage.input_tokens,
+                input_tokens=usage.input_tokens + cache_read_tokens + cache_creation_tokens,
                 output_tokens=usage.output_tokens,
-                total_tokens=usage.input_tokens + usage.output_tokens,
-                reasoning_tokens=None,
-                cache_read_input_tokens=usage.cache_read_input_tokens,
-                cache_creation_input_tokens=usage.cache_creation_input_tokens,
+                input_cache_read_tokens=cache_read_tokens,
+                input_cache_creation_tokens=cache_creation_tokens,
             )
 
         parts = []
@@ -169,15 +169,17 @@ class AnthropicMessagesClient:
         messages: list[AgentMessage],
         tools: list[ToolSpec],
     ) -> AssistantMessage:
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            system=system_message.content,
-            messages=self._to_messages(messages=messages),
-            tools=self._to_tools(tools=tools),
-            thinking={
+        kwargs = {
+            'model': self.model,
+            'max_tokens': self.max_tokens,
+            'system': system_message.content,
+            'messages': self._to_messages(messages=messages),
+            'thinking': {
                 'type': 'enabled',
                 'budget_tokens': self.budget_tokens,
-            },
-        )
+            }
+        }
+        if tools:
+            kwargs['tools'] = self._to_tools(tools=tools)
+        response = await self.client.messages.create(**kwargs)
         return self._to_assistant_message(message=response)

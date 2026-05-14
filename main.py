@@ -47,7 +47,6 @@ async def main():
     )
     root_tools, root_tool_handlers = await build_root_registry(context)
 
-    totoal_cost = 0
     while True:
         try:
             query = await get_input(session, prompt='⚡')
@@ -55,11 +54,11 @@ async def main():
             print('^C')
             continue
         except EOFError:
-            print(f'Total const {totoal_cost} tokens.')
+            print(f'Total cost {context.total_usage.total_tokens} tokens.')
             break
 
         if query.strip().lower() in ('q', 'exit'):
-            print(f'Total const {totoal_cost} tokens.')
+            print(f'Total cost {context.total_usage.total_tokens} tokens.')
             break
 
         system_message = SystemMessage(
@@ -69,7 +68,6 @@ async def main():
         )
         history_messages.append(UserMessage(content=query))
 
-        context.current_turn_usage = TokenUsage()
         await agent_loop(
             context=context,
             system_message=system_message,
@@ -77,7 +75,6 @@ async def main():
             tools=root_tools,
             tool_handlers=root_tool_handlers,
         )
-        totoal_cost += context.current_turn_usage.total_tokens
 
 if __name__ == '__main__':
     asyncio.run(main())

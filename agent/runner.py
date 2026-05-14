@@ -4,31 +4,41 @@ from agent.context import AgentContext
 from llm.types import (
     SystemMessage,
     AgentMessage,
+    UserMessage,
     ToolSpec,
     ToolResultMessage,
     TokenUsage,
 )
 from ui.renderer import Event
+from prompts.compress import get_compress_prompts
 
 
 def _format_token_usage(usage: TokenUsage) -> str:
-    output = f' Cost {usage.total_tokens} tokens. (Input: {usage.input_tokens} / Output: {usage.output_tokens}'
+    input = f'- Input: {usage.input_tokens} tokens.'
+    if usage.input_cache_read_tokens:
+        input += f' Cache read: {usage.input_cache_read_tokens} tokens.'
+    if usage.input_cache_creation_tokens:
+        input += f' Cache create: {usage.input_cache_creation_tokens} tokens.'
 
-    if reasoning_tokens := usage.reasoning_tokens:
-        output += f' / Reasoning: {reasoning_tokens}'
-    output += ')'
+    output = f'- Output: {usage.output_tokens} tokens.'
+    if usage.output_reasoning_tokens:
+        output += f' Reasoning: {usage.output_reasoning_tokens} tokens.'
 
-    cache_read = usage.cache_read_input_tokens
-    cache_create = usage.cache_creation_input_tokens
-    if cache_read or cache_create:
-        cache = '  [Cache] '
-        if cache_read:
-            cache += f'Read: {cache_read} '
-        if cache_create:
-            cache += f'Created: {cache_create}'
-        output += cache
+    return '\n'.join([
+        f' Cost: {usage.total_tokens} tokens.',
+        input,
+        output,
+    ])
 
-    return output
+def get_last_n_user_message(messages: list[AgentMessage], n: int = 10):
+    results = []
+    for msg in reversed(messages):
+        if msg.role == 'user':
+            results.append(msg)
+            if len(results) > n:
+                break
+    results.reverse()
+    return results
 
 async def agent_loop(
     *,
@@ -44,16 +54,54 @@ async def agent_loop(
     client = context.client
     renderer = context.renderer
 
+    current_trun_usage = TokenUsage()
     while True:
+        # compress and summary
+        usage = context.last_context_usage
+        if usage is not None and usage.total_tokens > context.max_context_tokens * 0.9:
+            compress_prompt, compress_prefix = await get_compress_prompts()
+            messages.append(UserMessage(content=compress_prompt))
+
+            response = await client.create_message(
+                system_message=system_message,
+                messages=messages,
+                tools=tools,
+            )
+
+            if usage := response.usage:
+                context.last_context_usage = usage
+                context.total_usage.add(usage)
+                current_trun_usage.add(usage)
+
+            summaries = []
+            for part in response.parts:
+                if part.type == 'message':
+                    for block in part.content:
+                        if block.type == 'text':
+                            summaries.append(block.content)
+
+            compressed_message = compress_prefix + '\n'.join(summaries)
+
+            messages.clear()
+            messages.extend(get_last_n_user_message(messages))
+            messages.append(UserMessage(content=compressed_message))
+
+            renderer.render(Event(
+                type='usage',  # temp
+                prefix='[Context Compacted]\n',
+                content=compressed_message,
+            ))
+
         response = await client.create_message(
             system_message=system_message,
             messages=messages,
             tools=tools,
         )
 
-        if response.usage:
-            context.last_call_usage = response.usage
-            context.current_turn_usage.add(response.usage)
+        if usage:= response.usage:
+            context.last_context_usage = usage
+            context.total_usage.add(usage)
+            current_trun_usage.add(usage)
 
         has_tool_call = False
         agent_response_parts = []
@@ -112,6 +160,6 @@ async def agent_loop(
                 renderer.render(Event(
                     type='usage',
                     prefix='[Usage]',
-                    content=_format_token_usage(context.current_turn_usage),
+                    content=_format_token_usage(current_trun_usage),
                 ))
             return ''.join(agent_response_parts)

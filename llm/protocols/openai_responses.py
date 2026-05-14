@@ -96,12 +96,13 @@ class OpenAIResponsesClient:
         raw_usage = getattr(response, 'usage', None)
         usage = None
         if raw_usage:
-            details = getattr(raw_usage, 'output_tokens_details', None)
+            input_details = getattr(raw_usage, 'input_tokens_details', None)
+            output_details = getattr(raw_usage, 'output_tokens_details', None)
             usage = TokenUsage(
                 input_tokens=getattr(raw_usage, 'input_tokens', 0) or 0,
                 output_tokens=getattr(raw_usage, 'output_tokens', 0) or 0,
-                total_tokens=getattr(raw_usage, 'total_tokens', 0) or 0,
-                reasoning_tokens=getattr(details, 'reasoning_tokens', 0),
+                input_cache_read_tokens=getattr(input_details, 'cached_tokens', 0) or 0,
+                output_reasoning_tokens=getattr(output_details, 'reasoning_tokens', 0) or 0,
             )
 
         parts = []
@@ -150,8 +151,9 @@ class OpenAIResponsesClient:
             'model': self.model,
             'instructions': system_message.content,
             'input': self._to_input(messages),
-            'tools': self._to_tools(tools),
         }
+        if tools:
+            kwargs['tools'] = self._to_tools(tools)
         if self.reasoning_effort:
             kwargs['reasoning'] = {'effort': self.reasoning_effort}
         if self.extra_body:

@@ -11,9 +11,9 @@ from tools.skill import SkillRegistry
 class AgentContext:
     client: ModelClient
     model_name: str
-    max_context_tokens: int | None
     renderer: Renderer
     workdir: Path
     skill_reigstry: SkillRegistry
-    current_turn_usage: TokenUsage = field(default_factory=TokenUsage)
-    last_call_usage: TokenUsage | None = None
+    max_context_tokens: int = 254_000
+    last_context_usage: TokenUsage | None = None
+    total_usage: TokenUsage = field(default_factory=TokenUsage)
