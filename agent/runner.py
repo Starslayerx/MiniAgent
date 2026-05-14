@@ -105,7 +105,8 @@ async def agent_loop(
         )
 
         if usage := response.usage:
-            context.last_context_usage = usage
+            if show_turn_usage:
+                context.last_context_usage = usage
             context.total_usage.add(usage)
             current_trun_usage.add(usage)
 
