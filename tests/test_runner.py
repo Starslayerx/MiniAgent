@@ -2,13 +2,14 @@ import pytest
 from pathlib import Path
 
 from agent.context import AgentContext
-from agent.runner import agent_loop
+from agent.runner import _format_token_usage, agent_loop
 from llm.types import (
     TextBlock,
     MessagePart,
     ToolCallPart,
     ToolResultMessage,
     ToolSpec,
+    TokenUsage,
     AssistantMessage,
     AgentMessage,
     SystemMessage,
@@ -118,3 +119,19 @@ async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
     assert messages[2].tool_call_id == 'call_1'
     assert messages[2].name == 'echo'
     assert messages[2].content == 'hello'
+
+
+def test_format_token_usage_keeps_breakdowns_inside_totals():
+    usage = TokenUsage(
+        input_tokens=100,
+        output_tokens=50,
+        input_cache_read_tokens=20,
+        input_cache_creation_tokens=10,
+        output_reasoning_tokens=15,
+    )
+
+    assert _format_token_usage(usage) == (
+        ' Cost: 150 tokens.\n'
+        '- Input: 100 tokens. Cache read: 20 tokens. Cache create: 10 tokens.\n'
+        '- Output: 50 tokens. Reasoning: 15 tokens.'
+    )
