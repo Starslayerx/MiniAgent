@@ -57,14 +57,17 @@ async def agent_loop(
     current_trun_usage = TokenUsage()
     while True:
         # compress and summary
-        usage = context.last_context_usage
-        if usage is not None and usage.total_tokens > context.max_context_tokens * 0.9:
+        if (usage := context.last_context_usage) and usage.total_tokens > context.max_context_tokens:
+            new_user_message = None
+            if messages[-1].role == 'user':
+                new_user_message = messages.pop()
+
             compress_prompt, compress_prefix = await get_compress_prompts()
-            messages.append(UserMessage(content=compress_prompt))
+            compress_messages = messages + [UserMessage(content=compress_prompt)]
 
             response = await client.create_message(
                 system_message=system_message,
-                messages=messages,
+                messages=compress_messages,
                 tools=tools,
             )
 
@@ -86,6 +89,8 @@ async def agent_loop(
             messages.clear()
             messages.extend(old_user_messages)
             messages.append(UserMessage(content=compressed_message))
+            if new_user_message:
+                messages.append(new_user_message)
 
             renderer.render(Event(
                 type='usage',  # temp
@@ -99,7 +104,7 @@ async def agent_loop(
             tools=tools,
         )
 
-        if usage:= response.usage:
+        if usage := response.usage:
             context.last_context_usage = usage
             context.total_usage.add(usage)
             current_trun_usage.add(usage)

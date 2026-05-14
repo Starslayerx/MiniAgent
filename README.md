@@ -14,6 +14,11 @@ How to run this:
 2. Configure OpenAI Completions/Responses API-compatible model providers in `providers.toml`
 3. Run `uv run main.py`
 
+You can test *compact* ability with less token context limitation using environment variable `DEBUG_MAX_CONTEXT_TOKENS`:
+```shell
+DEBUG_MAX_CONTEXT_TOKENS=8000 uv run main.py
+```
+
 > Known Limitation
 
 Dashscope Responses API provided models may describe a next tool action without actually emitting the tool call during long tasks, causing the loop to stop early.
