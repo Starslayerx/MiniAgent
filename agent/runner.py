@@ -54,7 +54,7 @@ async def agent_loop(
     client = context.client
     renderer = context.renderer
 
-    current_trun_usage = TokenUsage()
+    current_turn_usage = TokenUsage()
     while True:
         # compress and summary
         if (usage := context.last_context_usage) and usage.total_tokens > context.max_context_tokens * 0.9:
@@ -74,7 +74,7 @@ async def agent_loop(
             if usage := response.usage:
                 context.last_context_usage = usage
                 context.total_usage.add(usage)
-                current_trun_usage.add(usage)
+                current_turn_usage.add(usage)
 
             summaries = []
             for part in response.parts:
@@ -108,7 +108,7 @@ async def agent_loop(
             if show_turn_usage:
                 context.last_context_usage = usage
             context.total_usage.add(usage)
-            current_trun_usage.add(usage)
+            current_turn_usage.add(usage)
 
         has_tool_call = False
         agent_response_parts = []
@@ -167,6 +167,6 @@ async def agent_loop(
                 renderer.render(Event(
                     type='usage',
                     prefix='[Usage]',
-                    content=_format_token_usage(current_trun_usage),
+                    content=_format_token_usage(current_turn_usage),
                 ))
             return ''.join(agent_response_parts)
