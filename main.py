@@ -4,7 +4,7 @@ from prompt_toolkit import PromptSession
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
 from llm.protocols import create_client
-from llm.types import SystemMessage, TokenUsage, UserMessage
+from llm.types import SystemMessage, UserMessage
 from prompts.system import build_system_prompt
 from agent.runner import agent_loop
 from agent.context import AgentContext
@@ -37,10 +37,16 @@ async def main():
 
     model_config = provider.get_model_config(provider.default_model)
 
+    max_context_tokens = 254_000
+    if model_config.max_context_tokens:
+        max_context_tokens = model_config.max_context_tokens
+    if settings.debug_max_context_tokens:
+        max_context_tokens = settings.debug_max_context_tokens
+
     context = AgentContext(
         client=client,
         model_name=provider.default_model,
-        max_context_tokens=model_config.max_context_tokens if model_config else None,
+        max_context_tokens=max_context_tokens,
         renderer=renderer,
         workdir=work_dir,
         skill_reigstry=SkillRegistry(get_skills_dir()),

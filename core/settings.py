@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     # providers configuration
     providers: dict[str, ProviderConfig]
 
+    debug_max_context_tokens: int | None = None
+
     @classmethod
     def settings_customise_sources(
         cls,

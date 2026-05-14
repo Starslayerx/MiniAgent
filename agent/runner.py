@@ -81,9 +81,10 @@ async def agent_loop(
                             summaries.append(block.content)
 
             compressed_message = compress_prefix + '\n'.join(summaries)
+            old_user_messages = get_last_n_user_message(messages)
 
             messages.clear()
-            messages.extend(get_last_n_user_message(messages))
+            messages.extend(old_user_messages)
             messages.append(UserMessage(content=compressed_message))
 
             renderer.render(Event(
