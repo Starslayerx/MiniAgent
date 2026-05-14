@@ -37,10 +37,16 @@ async def main():
 
     model_config = provider.get_model_config(provider.default_model)
 
+    max_context_tokens = 254_000
+    if model_config and model_config.max_context_tokens:
+        max_context_tokens = model_config.max_context_tokens
+    if settings.debug_max_context_tokens:
+        max_context_tokens = settings.debug_max_context_tokens
+
     context = AgentContext(
         client=client,
         model_name=provider.default_model,
-        max_context_tokens=model_config.max_context_tokens if model_config else None,
+        max_context_tokens=max_context_tokens,
         renderer=renderer,
         workdir=work_dir,
         skill_reigstry=SkillRegistry(get_skills_dir()),
@@ -54,11 +60,11 @@ async def main():
             print('^C')
             continue
         except EOFError:
-            print('Bye~')
+            print(f'Total cost {context.total_usage.total_tokens} tokens.')
             break
 
         if query.strip().lower() in ('q', 'exit'):
-            print('Bye~')
+            print(f'Total cost {context.total_usage.total_tokens} tokens.')
             break
 
         system_message = SystemMessage(

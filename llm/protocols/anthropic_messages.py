@@ -1,17 +1,19 @@
 from anthropic import AsyncAnthropic
+from typing import Any
+
+from anthropic.types import Message
 
 from llm.types import (
     AgentMessage,
-    ToolResultMessage,
     ToolSpec,
     AssistantMessage,
     SystemMessage,
-    UserMessage,
     ToolSpec,
     TextBlock,
     MessagePart,
     ReasoningPart,
     ToolCallPart,
+    TokenUsage,
 )
 
 class AnthropicMessagesClient:
@@ -36,7 +38,7 @@ class AnthropicMessagesClient:
         self,
         *,
         messages: list[AgentMessage],
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
 
         def _append_message(output_messages: list, role: str, blocks: list):
             if not blocks:
@@ -122,43 +124,43 @@ class AnthropicMessagesClient:
             })
         return anthropic_tools
 
-    def _to_assistant_message(self, *, message: dict) -> AgentMessage:
-        if message.role == 'assistant':
-            parts = []
-            for content in message.content:
-                if content.type == 'text':
-                    parts.append(MessagePart(
-                        role='assistant',
-                        content=[TextBlock(content=content.text)],
-                    ))
-                elif content.type == 'thinking':
-                    parts.append(ReasoningPart(
-                        summary=[content.thinking],
-                        signature=content.signature,
-                        redacted_data=getattr(content, 'redacted_data', None),
-                    ))
-                elif content.type == 'tool_use':
-                    parts.append(ToolCallPart(
-                        tool_call_id=content.id,
-                        name=content.name,
-                        arguments=content.input,
-                    ))
-                elif content.type == 'redacted_thinking':
-                    parts.append(ReasoningPart(
-                        summary=[],
-                        redacted_data=content.data,
-                    ))
-            return AssistantMessage(parts=parts)
-        elif message.role == 'user':
-            for content in message.content:
-                if content.type == 'text':
-                    return UserMessage(content=content.text)
-                elif content.type == 'tool_result':
-                    return ToolResultMessage(
-                        tool_call_id=content.tool_use_id,
-                        content=content.content,
-                        is_error=content.is_error,
-                    )
+    def _to_assistant_message(self, *, message: Message) -> AssistantMessage:
+        usage = None
+        if usage:= message.usage:
+            cache_read_tokens = usage.cache_read_input_tokens or 0
+            cache_creation_tokens = usage.cache_creation_input_tokens or 0
+            usage = TokenUsage(
+                input_tokens=usage.input_tokens + cache_read_tokens + cache_creation_tokens,
+                output_tokens=usage.output_tokens,
+                input_cache_read_tokens=cache_read_tokens,
+                input_cache_creation_tokens=cache_creation_tokens,
+            )
+
+        parts = []
+        for content in message.content:
+            if content.type == 'text':
+                parts.append(MessagePart(
+                    role='assistant',
+                    content=[TextBlock(content=content.text)],
+                ))
+            elif content.type == 'thinking':
+                parts.append(ReasoningPart(
+                    summary=[content.thinking],
+                    signature=content.signature,
+                    redacted_data=getattr(content, 'redacted_data', None),
+                ))
+            elif content.type == 'tool_use':
+                parts.append(ToolCallPart(
+                    tool_call_id=content.id,
+                    name=content.name,
+                    arguments=content.input,
+                ))
+            elif content.type == 'redacted_thinking':
+                parts.append(ReasoningPart(
+                    summary=[],
+                    redacted_data=content.data,
+                ))
+        return AssistantMessage(parts=parts, usage=usage)
 
     async def create_message(
         self,
@@ -167,15 +169,17 @@ class AnthropicMessagesClient:
         messages: list[AgentMessage],
         tools: list[ToolSpec],
     ) -> AssistantMessage:
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            system=system_message.content,
-            messages=self._to_messages(messages=messages),
-            tools=self._to_tools(tools=tools),
-            thinking={
+        kwargs = {
+            'model': self.model,
+            'max_tokens': self.max_tokens,
+            'system': system_message.content,
+            'messages': self._to_messages(messages=messages),
+            'thinking': {
                 'type': 'enabled',
                 'budget_tokens': self.budget_tokens,
-            },
-        )
+            }
+        }
+        if tools:
+            kwargs['tools'] = self._to_tools(tools=tools)
+        response = await self.client.messages.create(**kwargs)
         return self._to_assistant_message(message=response)

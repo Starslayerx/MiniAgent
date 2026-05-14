@@ -13,7 +13,7 @@ class ModelClient(Protocol):
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-        tools: list[ToolSpec],
+        tools: list[ToolSpec] | None = None,
     ) -> AssistantMessage:
         ...
 
