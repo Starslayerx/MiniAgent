@@ -38,7 +38,7 @@ async def main():
     model_config = provider.get_model_config(provider.default_model)
 
     max_context_tokens = 254_000
-    if model_config.max_context_tokens:
+    if model_config and model_config.max_context_tokens:
         max_context_tokens = model_config.max_context_tokens
     if settings.debug_max_context_tokens:
         max_context_tokens = settings.debug_max_context_tokens
