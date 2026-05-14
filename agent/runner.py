@@ -57,7 +57,7 @@ async def agent_loop(
     current_trun_usage = TokenUsage()
     while True:
         # compress and summary
-        if (usage := context.last_context_usage) and usage.total_tokens > context.max_context_tokens:
+        if (usage := context.last_context_usage) and usage.total_tokens > context.max_context_tokens * 0.9:
             new_user_message = None
             if messages[-1].role == 'user':
                 new_user_message = messages.pop()
@@ -68,7 +68,7 @@ async def agent_loop(
             response = await client.create_message(
                 system_message=system_message,
                 messages=compress_messages,
-                tools=tools,
+                tools=None,
             )
 
             if usage := response.usage:
