@@ -51,7 +51,7 @@ class SkillRegistry:
         return f'Unknown skill: {name}. Available skills: {available_names}'
 
 
-async def bulid_skill_registry(registry: SkillRegistry) -> str:
+async def build_skill_registry(registry: SkillRegistry) -> str:
 
     async def load_skill(name: str) -> str:
         return registry.load_body_by_name(name)
