@@ -1,7 +1,7 @@
 [project]
 name = "miniagent"
 version = "0.1.0"
-description = "Add your description here"
+description = "A mini ai agent cli tool."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -24,3 +24,33 @@ dev = [
     "pytest-cov>=7.1.0",
     "ruff>=0.15.13",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+indent-width = 4
+extend-exclude = [
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "UP",  # modern Python upgrades
+    "B",   # likely bugs
+    "RUF", # ruff specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+"{prompts,tools}/*.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = 'lf'
+skip-magic-trailing-comma = false
