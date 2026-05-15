@@ -1,21 +1,23 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from agent.context import AgentContext
 from agent.runner import _format_token_usage, agent_loop
 from llm.types import (
-    TextBlock,
+    AgentMessage,
+    AssistantMessage,
     MessagePart,
+    SystemMessage,
+    TextBlock,
+    TokenUsage,
     ToolCallPart,
     ToolResultMessage,
     ToolSpec,
-    TokenUsage,
-    AssistantMessage,
-    AgentMessage,
-    SystemMessage,
     UserMessage,
 )
 from tools.skill import SkillRegistry
+
 
 class FakeModelClient:
     def __init__(self):
@@ -50,19 +52,14 @@ class FakeModelClient:
             )
 
         return AssistantMessage(
-            parts=[
-                MessagePart(
-                    id='msg_1',
-                    role='assistant',
-                    content=[TextBlock(content='done')]
-                )
-            ]
+            parts=[MessagePart(id='msg_1', role='assistant', content=[TextBlock(content='done')])]
         )
 
 
 class FakeRenderer:
     def __init__(self):
         self.events = []
+
     def render(self, event):
         self.events.append(event)
 
@@ -96,15 +93,17 @@ async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
         context=context,
         system_message=SystemMessage(content='system'),
         messages=messages,
-        tools=[ToolSpec(
-            name='echo',
-            description='Echo a value',
-            parameter_schema={
-                'type': 'object',
-                'properties': {'value': {'type': 'string'}},
-                'required': ['value'],
-            }
-        )],
+        tools=[
+            ToolSpec(
+                name='echo',
+                description='Echo a value',
+                parameter_schema={
+                    'type': 'object',
+                    'properties': {'value': {'type': 'string'}},
+                    'required': ['value'],
+                },
+            )
+        ],
         tool_handlers={'echo': echo},
     )
 

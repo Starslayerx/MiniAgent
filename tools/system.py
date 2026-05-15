@@ -1,6 +1,7 @@
-import aiofiles
 import asyncio
 from pathlib import Path
+
+import aiofiles
 
 from core.paths import get_current_dir
 from llm.types import ToolSpec
@@ -8,6 +9,7 @@ from llm.types import ToolSpec
 
 class PathSecurityError(ValueError):
     pass
+
 
 def safe_path(path: str) -> Path:
     """Return absolute path"""
@@ -17,6 +19,7 @@ def safe_path(path: str) -> Path:
     if not path.is_relative_to(work_dir):
         raise PathSecurityError(f'Path escapes workspace: {path}')
     return path
+
 
 async def run_bash(command: str, timeout: int = 120) -> str:
     """Run a bash command"""
@@ -38,16 +41,17 @@ async def run_bash(command: str, timeout: int = 120) -> str:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
         out = (stdout + stderr).decode(errors='replace').strip()
         return out[:5000] if out else '(no output)'
-    except asyncio.TimeoutError:
+    except TimeoutError:
         proc.kill()
         await proc.wait()
         return f'Error: Timeout ({timeout}s)'
 
-async def run_read(path: str, line_limit: int = None, encoding: str = 'utf-8') -> str:
+
+async def run_read(path: str, line_limit: int = 10000, encoding: str = 'utf-8') -> str:
     """Read file"""
 
     try:
-        async with aiofiles.open(safe_path(path), 'r', encoding=encoding) as f:
+        async with aiofiles.open(safe_path(path), encoding=encoding) as f:
             text = await f.read()
             lines = text.splitlines()
             if line_limit and line_limit < len(lines):
@@ -75,21 +79,22 @@ async def run_write(path: str, content: str, encoding: str = 'utf-8') -> str:
     except Exception as e:
         return f'Error: {e}'
 
+
 async def run_edit(path: str, old_content: str, new_content: str, encoding='utf-8') -> str:
     """Edit file"""
 
     try:
         abs_path = safe_path(path)
-        async with aiofiles.open(abs_path, 'r', encoding=encoding) as f:
+        async with aiofiles.open(abs_path, encoding=encoding) as f:
             content = await f.read()
 
         if old_content not in content:
-            return f'Error: old_content not found in this file'
+            return 'Error: old_content not found in this file'
         new_full_content = content.replace(old_content, new_content)
 
         async with aiofiles.open(abs_path, 'w', encoding=encoding) as f:
             await f.write(new_full_content)
-        return f'Success: file edited successfully'
+        return 'Success: file edited successfully'
     except PathSecurityError as e:
         return f'Error: {e}'
     except FileExistsError:
@@ -119,7 +124,7 @@ tools = [
             },
             'additionalProperties': False,
             'required': ['command'],
-        }
+        },
     ),
     ToolSpec(
         name='read_file',
@@ -129,7 +134,7 @@ tools = [
             'properties': {
                 'path': {
                     'type': 'string',
-                    'description': 'Relative path inside the current workspace.'
+                    'description': 'Relative path inside the current workspace.',
                 },
                 'line_limit': {
                     'type': 'integer',
@@ -140,11 +145,11 @@ tools = [
                     'type': 'string',
                     'description': 'File encoding. Defaults to utf-8.',
                     'default': 'utf-8',
-                }
+                },
             },
             'additionalProperties': False,
             'required': ['path'],
-        }
+        },
     ),
     ToolSpec(
         name='write_file',
@@ -154,7 +159,7 @@ tools = [
             'properties': {
                 'path': {
                     'type': 'string',
-                    'description': 'Relative path inside the current workspace.'
+                    'description': 'Relative path inside the current workspace.',
                 },
                 'content': {
                     'type': 'string',
@@ -168,7 +173,7 @@ tools = [
             },
             'additionalProperties': False,
             'required': ['path', 'content'],
-        }
+        },
     ),
     ToolSpec(
         name='edit_file',
@@ -196,8 +201,8 @@ tools = [
             },
             'additionalProperties': False,
             'required': ['path', 'old_content', 'new_content'],
-        }
-    )
+        },
+    ),
 ]
 
 tool_handlers = {

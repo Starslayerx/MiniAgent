@@ -1,8 +1,10 @@
-import frontmatter
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
+
+import frontmatter
 
 from llm.types import ToolSpec
+
 
 @dataclass(slots=True)
 class SkillManifest:
@@ -10,10 +12,12 @@ class SkillManifest:
     description: str
     path: Path
 
+
 @dataclass(slots=True)
 class SkillDocument:
     manifest: SkillManifest
     body: str
+
 
 class SkillRegistry:
     def __init__(self, skill_dir: Path):
@@ -27,7 +31,7 @@ class SkillRegistry:
     def _load_skill_documents(self) -> dict[str, SkillDocument]:
         documents: dict[str, SkillDocument] = {}
         for dir in self.folders:
-            with open(dir / 'SKILL.md', 'r', encoding='utf-8') as f:
+            with open(dir / 'SKILL.md', encoding='utf-8') as f:
                 content = f.read()
                 post = frontmatter.loads(content)
                 manifest = SkillManifest(
@@ -66,7 +70,7 @@ async def bulid_skill_registry(registry: SkillRegistry) -> str:
                 },
                 'additionalProperties': False,
                 'required': ['name'],
-            }
+            },
         )
     ]
 

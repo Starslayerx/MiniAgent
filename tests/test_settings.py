@@ -24,7 +24,6 @@ def settings():
                         'extra_body': {'enable_thinking': True},
                     },
                 },
-
             },
             'deepseek': {
                 'api_key': 'sk-deepseek',
@@ -47,7 +46,7 @@ def settings():
                     },
                 },
             },
-        }
+        },
     )
 
 
@@ -66,7 +65,10 @@ def test_get_provider_with_current_provider(settings):
     assert item[1].max_context_tokens == 256_000
 
     protocol = provider.protocols[ProviderProtocol.openai_responses_api]
-    assert protocol.base_url == 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
+    assert (
+        protocol.base_url
+        == 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1'
+    )
     assert protocol.extra_body == {'enable_thinking': True}
     assert protocol.reasoning_efforts is None
 
@@ -120,7 +122,7 @@ def test_provider_unknown_protocol():
                         },
                     },
                 }
-            }
+            },
         )
 
     errors = exc_info.value.errors()
@@ -145,7 +147,7 @@ def test_provider_optional_fields_default_to_none():
                     },
                 },
             }
-        }
+        },
     )
 
     provider = settings.get_provider()

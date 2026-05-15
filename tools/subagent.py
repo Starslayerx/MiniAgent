@@ -1,19 +1,20 @@
-from agent.runner import agent_loop
 from agent.context import AgentContext
+from agent.runner import agent_loop
+from llm.types import (
+    SystemMessage,
+    ToolSpec,
+    UserMessage,
+)
 from prompts import build_system_prompt
 
 from .plan import build_plan_registry
-from llm.types import (
-    SystemMessage,
-    UserMessage,
-    ToolSpec,
-)
+
 
 async def build_subagent_registry(
     context: AgentContext,
     child_tools: list,
     child_tool_handlers: dict,
-    max_iterations: int = 30, # Not Implemented Yet
+    max_iterations: int = 30,  # Not Implemented Yet
 ):
 
     async def run_subagent(prompt: str):
@@ -46,7 +47,7 @@ async def build_subagent_registry(
                 },
                 'additionalProperties': False,
                 'required': ['prompt'],
-            }
+            },
         )
     ]
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Literal, Any, Union
+
 from dataclasses import dataclass
+from typing import Any, Literal
 
 
 @dataclass
@@ -15,7 +16,9 @@ class TextBlock:
     content: str
     type: Literal['text'] = 'text'
 
+
 ContentBlock = TextBlock
+
 
 @dataclass
 class MessagePart:
@@ -23,6 +26,7 @@ class MessagePart:
     content: list[ContentBlock]
     id: str | None = None
     type: Literal['message'] = 'message'
+
 
 @dataclass
 class ReasoningPart:
@@ -32,6 +36,7 @@ class ReasoningPart:
     redacted_data: str | None = None
     type: Literal['reasoning'] = 'reasoning'
 
+
 @dataclass
 class ToolCallPart:
     tool_call_id: str
@@ -40,7 +45,9 @@ class ToolCallPart:
     id: str | None = None
     type: Literal['tool_call'] = 'tool_call'
 
-AssistantPart = Union[MessagePart, ReasoningPart, ToolCallPart]
+
+AssistantPart = MessagePart | ReasoningPart | ToolCallPart
+
 
 @dataclass
 class TokenUsage:
@@ -61,6 +68,7 @@ class TokenUsage:
         self.input_cache_creation_tokens += other.input_cache_creation_tokens
         self.output_reasoning_tokens += other.output_reasoning_tokens
 
+
 @dataclass
 class AssistantMessage:
     parts: list[AssistantPart]
@@ -76,6 +84,7 @@ class ToolResultMessage:
     is_error: bool = False
     role: Literal['tool'] = 'tool'
 
+
 @dataclass(slots=True)
 class UserMessage:
     content: str
@@ -87,4 +96,5 @@ class SystemMessage:
     content: str
     role: Literal['system'] = 'system'
 
-AgentMessage = Union[UserMessage, AssistantMessage, ToolResultMessage]
+
+AgentMessage = UserMessage | AssistantMessage | ToolResultMessage

@@ -1,8 +1,10 @@
 from agent.context import AgentContext
-from .system import tools as system_tools, tool_handlers as system_tool_handlers
+
 from .plan import build_plan_registry
+from .skill import SkillRegistry, build_skill_registry
 from .subagent import build_subagent_registry
-from .skill import build_skill_registry, SkillRegistry
+from .system import tool_handlers as system_tool_handlers
+from .system import tools as system_tools
 
 
 async def build_child_registry(skill_registry: SkillRegistry):

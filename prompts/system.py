@@ -18,9 +18,5 @@ Your capabilities:
         description = document.manifest.description
         skill_manifests.append(f'- {name} skill at {path}: {description}')
     if len(skill_manifests) > 0:
-        system_prompt += (
-            'Available skills:\n'
-            '\n'.join(skill_manifests)
-        )
+        system_prompt += 'Available skills:\n\n'.join(skill_manifests)
     return system_prompt
-

@@ -1,18 +1,19 @@
 import json
 from typing import Any
+
 from openai import AsyncOpenAI
 from openai.types.responses import Response
 
 from llm.types import (
     AgentMessage,
     AssistantMessage,
-    SystemMessage,
-    ToolSpec,
-    TextBlock,
     MessagePart,
     ReasoningPart,
-    ToolCallPart,
+    SystemMessage,
+    TextBlock,
     TokenUsage,
+    ToolCallPart,
+    ToolSpec,
 )
 
 
@@ -42,22 +43,23 @@ class OpenAIResponsesClient:
             elif message.role == 'assistant':
                 for part in message.parts:
                     if part.type == 'message':
-                        items.append({
-                            'type': 'message',
-                            'role': part.role,
-                            'content': [
-                                {'type': 'output_text', 'text': block.content}
-                                for block in part.content
-                                if block.type == 'text'
-                            ]
-                        })
+                        items.append(
+                            {
+                                'type': 'message',
+                                'role': part.role,
+                                'content': [
+                                    {'type': 'output_text', 'text': block.content}
+                                    for block in part.content
+                                    if block.type == 'text'
+                                ],
+                            }
+                        )
                     elif part.type == 'reasoning':
                         item = {
                             'type': 'reasoning',
                             'summary': [
-                                {'type': 'summary_text', 'text': text}
-                                for text in part.summary
-                            ]
+                                {'type': 'summary_text', 'text': text} for text in part.summary
+                            ],
                         }
                         if part.id:
                             item['id'] = part.id
@@ -73,11 +75,13 @@ class OpenAIResponsesClient:
                             item['id'] = part.id
                         items.append(item)
             elif message.role == 'tool':
-                items.append({
-                    'type': 'function_call_output',
-                    'call_id': message.tool_call_id,
-                    'output': message.content,
-                })
+                items.append(
+                    {
+                        'type': 'function_call_output',
+                        'call_id': message.tool_call_id,
+                        'output': message.content,
+                    }
+                )
 
         return items
 
@@ -116,29 +120,32 @@ class OpenAIResponsesClient:
                             summary.text
                             for summary in item.summary
                             if summary.type == 'summary_text'
-                        ]
+                        ],
                     )
                 )
             elif item.type == 'message':
-                parts.append(MessagePart(
-                    id=item.id,
-                    role='assistant',
-                    content=[
-                        TextBlock(content=content.text)
-                        for content in item.content
-                        if content.type == 'output_text'
-                    ]
-                ))
+                parts.append(
+                    MessagePart(
+                        id=item.id,
+                        role='assistant',
+                        content=[
+                            TextBlock(content=content.text)
+                            for content in item.content
+                            if content.type == 'output_text'
+                        ],
+                    )
+                )
             elif item.type == 'function_call':
-                parts.append(ToolCallPart(
-                    id=item.id,
-                    tool_call_id=item.call_id,
-                    name=item.name,
-                    arguments=json.loads(item.arguments) if item.arguments else {},
-                ))
+                parts.append(
+                    ToolCallPart(
+                        id=item.id,
+                        tool_call_id=item.call_id,
+                        name=item.name,
+                        arguments=json.loads(item.arguments) if item.arguments else {},
+                    )
+                )
 
         return AssistantMessage(parts=parts, usage=usage)
-
 
     async def create_message(
         self,

@@ -1,17 +1,16 @@
-from typing import Type
-
-from core.settings import ProviderConfig, ProviderProtocol, ProtocolConfig
+from core.settings import ProtocolConfig, ProviderConfig, ProviderProtocol
 from llm.base import ModelClient
+
 from .anthropic_messages import AnthropicMessagesClient
 from .openai_completions import OpenAICompletionsClient
 from .openai_responses import OpenAIResponsesClient
 
-
-CLIENT_REGISTRY: dict[ProviderProtocol, Type[ModelClient]] = {
+CLIENT_REGISTRY: dict[ProviderProtocol, type[ModelClient]] = {
     ProviderProtocol.openai_completions_api: OpenAICompletionsClient,
     ProviderProtocol.openai_responses_api: OpenAIResponsesClient,
     ProviderProtocol.anthropic_messages_api: AnthropicMessagesClient,
 }
+
 
 def create_client(
     *,
