@@ -27,7 +27,7 @@ dev = [
 
 [tool.ruff]
 target-version = "py312"
-line-length = 100
+line-length = 114
 indent-width = 4
 extend-exclude = [
     ".venv",
@@ -54,3 +54,27 @@ quote-style = "single"
 indent-style = "space"
 line-ending = 'lf'
 skip-magic-trailing-comma = false
+
+[tool.pyright]
+pythonVersion = "3.12"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportCallIssue = "warning"
+reportArgumentType = "warning"
+include = [
+    "main.py",
+    "agent",
+    "core",
+    "llm",
+    "prompts",
+    "tools",
+    "ui",
+    "tests",
+]
+exclude = [
+    ".venv",
+    "__pycache__",
+]
+venvPath = "."
+venv = ".venv"

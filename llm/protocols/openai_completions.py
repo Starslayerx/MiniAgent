@@ -136,13 +136,18 @@ class OpenAICompletionsClient:
             parts.append(ReasoningPart(summary=[reasoning_content]))
 
         if msg.tool_calls is None:
-            parts.append(
-                MessagePart(
-                    role='assistant', id=response.id, content=[TextBlock(content=msg.content)]
+            if msg.content:
+                parts.append(
+                    MessagePart(
+                        role='assistant',
+                        id=response.id,
+                        content=[TextBlock(content=msg.content)],
+                    )
                 )
-            )
         else:
             for tc in msg.tool_calls:
+                if tc.type != 'function':
+                    continue
                 parts.append(
                     ToolCallPart(
                         tool_call_id=tc.id,

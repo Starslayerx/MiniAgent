@@ -61,9 +61,7 @@ async def agent_loop(
     current_turn_usage = TokenUsage()
     while True:
         # compress and summary
-        if (usage := context.last_context_usage) and (
-            usage.total_tokens > context.max_context_tokens * 0.9
-        ):
+        if (usage := context.last_context_usage) and (usage.total_tokens > context.max_context_tokens * 0.9):
             new_user_message = None
             if messages[-1].role == 'user':
                 new_user_message = messages.pop()

@@ -7,7 +7,7 @@ from agent.runner import agent_loop
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
 from llm.protocols import create_client
-from llm.types import SystemMessage, UserMessage
+from llm.types import AgentMessage, SystemMessage, UserMessage
 from prompts.system import build_system_prompt
 from tools.registry import build_root_registry
 from tools.skill import SkillRegistry
@@ -16,7 +16,7 @@ from ui.renderer import Renderer
 
 
 async def main():
-    settings = Settings()
+    settings = Settings()  # pyright: ignore[reportCallIssue]
     provider, protocol, protocol_config = settings.get_protocol_config()
 
     reasoning_effort = None
@@ -34,7 +34,7 @@ async def main():
     renderer = Renderer()
     work_dir = get_current_dir()
 
-    history_messages = [UserMessage(content=f'Your current work dir is `{work_dir}`')]
+    history_messages: list[AgentMessage] = [UserMessage(content=f'Your current work dir is `{work_dir}`')]
 
     model_config = provider.get_model_config(provider.default_model)
 

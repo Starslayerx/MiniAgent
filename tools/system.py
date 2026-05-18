@@ -15,10 +15,10 @@ def safe_path(path: str) -> Path:
     """Return absolute path"""
 
     work_dir = get_current_dir()
-    path = (work_dir / path).resolve()
-    if not path.is_relative_to(work_dir):
+    abs_path = (work_dir / path).resolve()
+    if not abs_path.is_relative_to(work_dir):
         raise PathSecurityError(f'Path escapes workspace: {path}')
-    return path
+    return abs_path
 
 
 async def run_bash(command: str, timeout: int = 120) -> str:

@@ -9,7 +9,7 @@ async def read_single_file(filepath: Path):
         return await f.read()
 
 
-async def get_compress_prompts() -> tuple[str, str]:
+async def get_compress_prompts() -> tuple[str, ...]:
     folder = Path(__file__).parent / 'templates' / 'compress'
     files = [folder / 'summary.md', folder / 'summary_prefix.md']
     tasks = [read_single_file(file) for file in files]

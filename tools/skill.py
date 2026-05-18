@@ -35,11 +35,11 @@ class SkillRegistry:
                 content = f.read()
                 post = frontmatter.loads(content)
                 manifest = SkillManifest(
-                    name=post.get('name'),
-                    description=post.get('description'),
-                    path=str(dir),
+                    name=str(post.get('name')),
+                    description=str(post.get('description')),
+                    path=dir,
                 )
-                documents[post.get('name')] = SkillDocument(manifest=manifest, body=post.content)
+                documents[str(post.get('name'))] = SkillDocument(manifest=manifest, body=post.content)
         return documents
 
     def load_body_by_name(self, name: str) -> str:
@@ -51,7 +51,7 @@ class SkillRegistry:
         return f'Unknown skill: {name}. Available skills: {available_names}'
 
 
-async def build_skill_registry(registry: SkillRegistry) -> str:
+async def build_skill_registry(registry: SkillRegistry) -> tuple[list, dict]:
 
     async def load_skill(name: str) -> str:
         return registry.load_body_by_name(name)

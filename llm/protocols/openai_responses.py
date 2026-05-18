@@ -57,9 +57,7 @@ class OpenAIResponsesClient:
                     elif part.type == 'reasoning':
                         item = {
                             'type': 'reasoning',
-                            'summary': [
-                                {'type': 'summary_text', 'text': text} for text in part.summary
-                            ],
+                            'summary': [{'type': 'summary_text', 'text': text} for text in part.summary],
                         }
                         if part.id:
                             item['id'] = part.id
@@ -116,11 +114,7 @@ class OpenAIResponsesClient:
                 parts.append(
                     ReasoningPart(
                         id=item.id,
-                        summary=[
-                            summary.text
-                            for summary in item.summary
-                            if summary.type == 'summary_text'
-                        ],
+                        summary=[summary.text for summary in item.summary if summary.type == 'summary_text'],
                     )
                 )
             elif item.type == 'message':
@@ -152,7 +146,7 @@ class OpenAIResponsesClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-        tools: list[ToolSpec],
+        tools: list[ToolSpec] | None = None,
     ) -> AssistantMessage:
         kwargs = {
             'model': self.model,

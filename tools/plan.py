@@ -71,10 +71,10 @@ class TodoManager:
         return '<reminder>Refresh your current plan before continuing.</reminder>'
 
 
-async def build_plan_registry(todo_manager: TodoManager | None = None):
+async def build_plan_registry(todo_manager: TodoManager | None = None) -> tuple[list, dict]:
     manager = todo_manager or TodoManager()
 
-    async def update_plan(items):
+    async def update_plan(items) -> str:
         try:
             args = TodoArguments(items=items)
             return manager.update(args.items)
