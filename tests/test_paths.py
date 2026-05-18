@@ -1,6 +1,7 @@
-import pytest
-from pathlib import Path
 from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
 
 import core.paths as paths
 
@@ -39,32 +40,32 @@ def test_get_root_dir_custom(tmp_path: Path) -> None:
 
 
 def test_get_prompts_dir_default(root_dir: Path) -> None:
-    prompts_dir = root_dir / "prompts/"
+    prompts_dir = root_dir / 'prompts/'
     assert paths.get_prompts_dir() == prompts_dir
 
 
 def test_get_prompts_dir_custom(root_dir: Path) -> None:
-    prompts_dir = root_dir / "test_prompts/"
-    assert paths.get_prompts_dir("test_prompts/") == prompts_dir
+    prompts_dir = root_dir / 'test_prompts/'
+    assert paths.get_prompts_dir('test_prompts/') == prompts_dir
 
 
 def test_get_env_file_path(root_dir: Path) -> None:
-    env_file = root_dir / ".env"
+    env_file = root_dir / '.env'
     assert paths.get_env_file_path() == env_file
 
 
 def test_get_env_file_path_custom(root_dir: Path) -> None:
-    env_filename = ".test.env"
+    env_filename = '.test.env'
     env_path = root_dir / env_filename
     assert paths.get_env_file_path(env_filename) == env_path
 
 
 def test_get_providers_file_path_default(root_dir: Path) -> None:
-    provider_path = root_dir / "providers.toml"
+    provider_path = root_dir / 'providers.toml'
     assert paths.get_providers_file_path() == provider_path
 
 
 def test_get_providers_file_path_base(root_dir: Path) -> None:
-    provider_file = "test_providers.toml"
+    provider_file = 'test_providers.toml'
     provider_path = root_dir / provider_file
     assert paths.get_providers_file_path(provider_file) == provider_path

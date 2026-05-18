@@ -1,25 +1,26 @@
 import asyncio
+
 from prompt_toolkit import PromptSession
 
+from agent.context import AgentContext
+from agent.runner import agent_loop
 from core.paths import get_current_dir, get_skills_dir
 from core.settings import Settings
 from llm.protocols import create_client
-from llm.types import SystemMessage, UserMessage
+from llm.types import AgentMessage, SystemMessage, UserMessage
 from prompts.system import build_system_prompt
-from agent.runner import agent_loop
-from agent.context import AgentContext
 from tools.registry import build_root_registry
 from tools.skill import SkillRegistry
-from ui.renderer import Renderer
 from ui.input import get_input
+from ui.renderer import Renderer
 
 
 async def main():
-    settings = Settings()
+    settings = Settings()  # pyright: ignore[reportCallIssue]
     provider, protocol, protocol_config = settings.get_protocol_config()
 
     reasoning_effort = None
-    if reason_efforts := getattr(protocol_config, 'reasoning_efforts'):
+    if reason_efforts := protocol_config.reasoning_efforts:
         reasoning_effort = reason_efforts[0]
 
     client = create_client(
@@ -33,7 +34,7 @@ async def main():
     renderer = Renderer()
     work_dir = get_current_dir()
 
-    history_messages = [UserMessage(content=f'Your current work dir is `{work_dir}`')]
+    history_messages: list[AgentMessage] = [UserMessage(content=f'Your current work dir is `{work_dir}`')]
 
     model_config = provider.get_model_config(provider.default_model)
 
@@ -81,6 +82,7 @@ async def main():
             tools=root_tools,
             tool_handlers=root_tool_handlers,
         )
+
 
 if __name__ == '__main__':
     asyncio.run(main())

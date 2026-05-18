@@ -1,29 +1,31 @@
-from typing import Literal
 from dataclasses import dataclass
-from prompt_toolkit.formatted_text import FormattedText
+from typing import Literal
+
 from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.styles import Style
 
-
-style = Style.from_dict({
-    # assistant
-    'assistant.prefix': 'ansigreen bold',
-    'assistant.content': '',
-    # resoning
-    'reasoning.prefix': 'ansibrightblack bold',
-    'reasoning.content': 'ansibrightblack italic',
-    # tool
-    'tool_call.prefix': 'ansiyellow bold',
-    'tool_call.content': 'bold',
-    'tool_result.prefix': 'ansiyellow',
-    'tool_result.content': '',
-    # error
-    'error.prefix': 'ansired bold',
-    'error.content': 'ansired',
-    # usage
-    'usage.prefix': 'ansibrightblue bold',
-    'usage.content': 'ansibrightblue',
-})
+style = Style.from_dict(
+    {
+        # assistant
+        'assistant.prefix': 'ansigreen bold',
+        'assistant.content': '',
+        # reasoning
+        'reasoning.prefix': 'ansibrightblack bold',
+        'reasoning.content': 'ansibrightblack italic',
+        # tool
+        'tool_call.prefix': 'ansiyellow bold',
+        'tool_call.content': 'bold',
+        'tool_result.prefix': 'ansiyellow',
+        'tool_result.content': '',
+        # error
+        'error.prefix': 'ansired bold',
+        'error.content': 'ansired',
+        # usage
+        'usage.prefix': 'ansibrightblue bold',
+        'usage.content': 'ansibrightblue',
+    }
+)
 
 EventType = Literal[
     'assistant',
@@ -34,11 +36,13 @@ EventType = Literal[
     'usage',
 ]
 
+
 @dataclass
 class Event:
     type: EventType
     prefix: str | None = None
-    content: str| None = None
+    content: str | None = None
+
 
 class Renderer:
     def render(self, event: Event) -> None:
@@ -57,4 +61,3 @@ class Renderer:
             FormattedText(fragments),
             style=style,
         )
-

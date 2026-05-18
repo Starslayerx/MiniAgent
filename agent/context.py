@@ -3,8 +3,8 @@ from pathlib import Path
 
 from llm.base import ModelClient
 from llm.types import TokenUsage
-from ui.renderer import Renderer
 from tools.skill import SkillRegistry
+from ui.renderer import Renderer
 
 
 @dataclass

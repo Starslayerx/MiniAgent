@@ -1,20 +1,20 @@
-from anthropic import AsyncAnthropic
 from typing import Any
 
+from anthropic import AsyncAnthropic
 from anthropic.types import Message
 
 from llm.types import (
     AgentMessage,
-    ToolSpec,
     AssistantMessage,
-    SystemMessage,
-    ToolSpec,
-    TextBlock,
     MessagePart,
     ReasoningPart,
-    ToolCallPart,
+    SystemMessage,
+    TextBlock,
     TokenUsage,
+    ToolCallPart,
+    ToolSpec,
 )
+
 
 class AnthropicMessagesClient:
     def __init__(
@@ -56,77 +56,99 @@ class AnthropicMessagesClient:
                     if part.type == 'message':
                         for block in part.content:
                             if block.type == 'text':
-                                content_blocks.append({
-                                    'type': 'text',
-                                    'text': block.content,
-                                })
+                                content_blocks.append(
+                                    {
+                                        'type': 'text',
+                                        'text': block.content,
+                                    }
+                                )
                     elif part.type == 'reasoning':
                         if part.redacted_data is not None:
-                            content_blocks.append({
-                                'type': 'redacted_thinking',
-                                'data': part.redacted_data,
-                            })
+                            content_blocks.append(
+                                {
+                                    'type': 'redacted_thinking',
+                                    'data': part.redacted_data,
+                                }
+                            )
                         elif part.summary and part.signature is not None:
-                            content_blocks.append({
-                                'type': 'thinking',
-                                'thinking': ''.join(part.summary),
-                                'signature': part.signature,
-                            })
+                            content_blocks.append(
+                                {
+                                    'type': 'thinking',
+                                    'thinking': ''.join(part.summary),
+                                    'signature': part.signature,
+                                }
+                            )
                     elif part.type == 'tool_call':
-                        content_blocks.append({
-                            'type': 'tool_use',
-                            'id': part.tool_call_id,
-                            'name': part.name,
-                            'input': part.arguments,
-                        })
+                        content_blocks.append(
+                            {
+                                'type': 'tool_use',
+                                'id': part.tool_call_id,
+                                'name': part.name,
+                                'input': part.arguments,
+                            }
+                        )
                 _append_message(anthropic_messages, 'assistant', content_blocks)
             elif message.role == 'user':
                 if anthropic_messages and anthropic_messages[-1]['role'] == 'user':
-                    anthropic_messages[-1]['content'].append({
-                        'type': 'text',
-                        'text': message.content,
-                    })
-                else:
-                    anthropic_messages.append({
-                        'role': 'user',
-                        'content': [{
+                    anthropic_messages[-1]['content'].append(
+                        {
                             'type': 'text',
                             'text': message.content,
-                        }],
-                    })
+                        }
+                    )
+                else:
+                    anthropic_messages.append(
+                        {
+                            'role': 'user',
+                            'content': [
+                                {
+                                    'type': 'text',
+                                    'text': message.content,
+                                }
+                            ],
+                        }
+                    )
             elif message.role == 'tool':
                 if anthropic_messages and anthropic_messages[-1]['role'] == 'user':
-                    anthropic_messages[-1]['content'].append({
-                        'type': 'tool_result',
-                        'tool_use_id': message.tool_call_id,
-                        'content': message.content,
-                        'is_error': message.is_error,
-                    })
-                else:
-                    anthropic_messages.append({
-                        'role': 'user',
-                        'content': [{
+                    anthropic_messages[-1]['content'].append(
+                        {
                             'type': 'tool_result',
                             'tool_use_id': message.tool_call_id,
                             'content': message.content,
                             'is_error': message.is_error,
-                        }],
-                    })
+                        }
+                    )
+                else:
+                    anthropic_messages.append(
+                        {
+                            'role': 'user',
+                            'content': [
+                                {
+                                    'type': 'tool_result',
+                                    'tool_use_id': message.tool_call_id,
+                                    'content': message.content,
+                                    'is_error': message.is_error,
+                                }
+                            ],
+                        }
+                    )
         return anthropic_messages
 
     def _to_tools(self, *, tools: list[ToolSpec]) -> list[dict]:
         anthropic_tools: list[dict] = []
         for tool in tools:
-            anthropic_tools.append({
-                'name': tool.name,
-                'description': tool.description,
-                'input_schema': tool.parameter_schema,
-            })
+            anthropic_tools.append(
+                {
+                    'name': tool.name,
+                    'description': tool.description,
+                    'input_schema': tool.parameter_schema,
+                }
+            )
         return anthropic_tools
 
     def _to_assistant_message(self, *, message: Message) -> AssistantMessage:
         usage = None
-        if usage:= message.usage:
+        if usage := message.usage:
             cache_read_tokens = usage.cache_read_input_tokens or 0
             cache_creation_tokens = usage.cache_creation_input_tokens or 0
             usage = TokenUsage(
@@ -139,27 +161,35 @@ class AnthropicMessagesClient:
         parts = []
         for content in message.content:
             if content.type == 'text':
-                parts.append(MessagePart(
-                    role='assistant',
-                    content=[TextBlock(content=content.text)],
-                ))
+                parts.append(
+                    MessagePart(
+                        role='assistant',
+                        content=[TextBlock(content=content.text)],
+                    )
+                )
             elif content.type == 'thinking':
-                parts.append(ReasoningPart(
-                    summary=[content.thinking],
-                    signature=content.signature,
-                    redacted_data=getattr(content, 'redacted_data', None),
-                ))
+                parts.append(
+                    ReasoningPart(
+                        summary=[content.thinking],
+                        signature=content.signature,
+                        redacted_data=getattr(content, 'redacted_data', None),
+                    )
+                )
             elif content.type == 'tool_use':
-                parts.append(ToolCallPart(
-                    tool_call_id=content.id,
-                    name=content.name,
-                    arguments=content.input,
-                ))
+                parts.append(
+                    ToolCallPart(
+                        tool_call_id=content.id,
+                        name=content.name,
+                        arguments=content.input,
+                    )
+                )
             elif content.type == 'redacted_thinking':
-                parts.append(ReasoningPart(
-                    summary=[],
-                    redacted_data=content.data,
-                ))
+                parts.append(
+                    ReasoningPart(
+                        summary=[],
+                        redacted_data=content.data,
+                    )
+                )
         return AssistantMessage(parts=parts, usage=usage)
 
     async def create_message(
@@ -167,7 +197,7 @@ class AnthropicMessagesClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-        tools: list[ToolSpec],
+        tools: list[ToolSpec] | None = None,
     ) -> AssistantMessage:
         kwargs = {
             'model': self.model,
@@ -177,7 +207,7 @@ class AnthropicMessagesClient:
             'thinking': {
                 'type': 'enabled',
                 'budget_tokens': self.budget_tokens,
-            }
+            },
         }
         if tools:
             kwargs['tools'] = self._to_tools(tools=tools)

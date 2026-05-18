@@ -1,7 +1,7 @@
 [project]
 name = "miniagent"
 version = "0.1.0"
-description = "Add your description here"
+description = "A mini ai agent cli tool."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -17,7 +17,77 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "codespell>=2.4.2",
+    "pyright>=1.1.409",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.1.0",
+    "ruff>=0.15.13",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 114
+indent-width = 4
+extend-exclude = [
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "UP",  # modern Python upgrades
+    "B",   # likely bugs
+    "RUF", # ruff specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+"{prompts,tools}/*.py" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+line-ending = 'lf'
+skip-magic-trailing-comma = false
+
+[tool.pyright]
+pythonVersion = "3.12"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportCallIssue = "warning"
+reportArgumentType = "warning"
+include = [
+    "main.py",
+    "agent",
+    "core",
+    "llm",
+    "prompts",
+    "tools",
+    "ui",
+    "tests",
+]
+exclude = [
+    ".venv",
+    "__pycache__",
+]
+venvPath = "."
+venv = ".venv"
+
+[tool.codespell]
+skip = [
+    ".git",
+    ".venv",
+    ".ruff_cache",
+    ".pytest_cache",
+    "__pycache__",
+    "uv.lock",
+    ".env",
+    ".env.*",
+]
+check-filenames = true

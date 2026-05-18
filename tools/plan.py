@@ -1,15 +1,17 @@
 from typing import Literal
+
 from pydantic import BaseModel, Field, Json, field_validator
 
 from llm.types import ToolSpec
 
-
 PLAN_REMINDER_INTERVAL = 3
+
 
 class PlanItem(BaseModel):
     content: str = Field(..., min_length=1)
     status: Literal['pending', 'in_progress', 'completed']
     active_form: str = ''
+
 
 class TodoArguments(BaseModel):
     items: list[PlanItem] | Json[list[PlanItem]] = Field(default_factory=list)
@@ -24,6 +26,7 @@ class TodoArguments(BaseModel):
         if in_progress_count > 1:
             raise ValueError('Only one plan item can be in_progress')
         return v
+
 
 class TodoManager:
     def __init__(self):
@@ -68,16 +71,15 @@ class TodoManager:
         return '<reminder>Refresh your current plan before continuing.</reminder>'
 
 
-
-async def build_plan_registry(todo_manager: TodoManager | None = None):
+async def build_plan_registry(todo_manager: TodoManager | None = None) -> tuple[list, dict]:
     manager = todo_manager or TodoManager()
 
-    async def update_plan(items):
+    async def update_plan(items) -> str:
         try:
             args = TodoArguments(items=items)
             return manager.update(args.items)
         except Exception as e:
-            return f'Error: {str(e)}'
+            return f'Error: {e!s}'
 
     tools = [
         ToolSpec(
@@ -115,7 +117,7 @@ async def build_plan_registry(todo_manager: TodoManager | None = None):
                 },
                 'additionalProperties': False,
                 'required': ['items'],
-            }
+            },
         ),
     ]
 

@@ -1,21 +1,24 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from agent.context import AgentContext
 from agent.runner import _format_token_usage, agent_loop
 from llm.types import (
-    TextBlock,
+    AgentMessage,
+    AssistantMessage,
     MessagePart,
+    SystemMessage,
+    TextBlock,
+    TokenUsage,
     ToolCallPart,
     ToolResultMessage,
     ToolSpec,
-    TokenUsage,
-    AssistantMessage,
-    AgentMessage,
-    SystemMessage,
     UserMessage,
 )
 from tools.skill import SkillRegistry
+from ui.renderer import Renderer
+
 
 class FakeModelClient:
     def __init__(self):
@@ -26,13 +29,14 @@ class FakeModelClient:
         *,
         system_message: SystemMessage,
         messages: list[AgentMessage],
-        tools: list[ToolSpec],
+        tools: list[ToolSpec] | None = None,
     ):
         self.calls += 1
 
         assert isinstance(system_message, SystemMessage)
         # truthy check: is not None and len() > 0
         assert messages
+        assert isinstance(messages[0], UserMessage)
         assert messages[0].content == 'run echo'
         assert tools
         assert tools[0].name == 'echo'
@@ -50,19 +54,14 @@ class FakeModelClient:
             )
 
         return AssistantMessage(
-            parts=[
-                MessagePart(
-                    id='msg_1',
-                    role='assistant',
-                    content=[TextBlock(content='done')]
-                )
-            ]
+            parts=[MessagePart(id='msg_1', role='assistant', content=[TextBlock(content='done')])]
         )
 
 
-class FakeRenderer:
+class FakeRenderer(Renderer):
     def __init__(self):
         self.events = []
+
     def render(self, event):
         self.events.append(event)
 
@@ -77,7 +76,7 @@ async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
     """
     client = FakeModelClient()
     renderer = FakeRenderer()
-    messages = [UserMessage(content='run echo')]
+    messages: list[AgentMessage] = [UserMessage(content='run echo')]
     skill_reigstry = SkillRegistry(tmp_path)
 
     async def echo(value: str) -> str:
@@ -86,7 +85,7 @@ async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
     context = AgentContext(
         client=client,
         model_name='fake-model',
-        max_context_tokens=None,
+        max_context_tokens=254_000,
         renderer=renderer,
         workdir=Path.cwd(),
         skill_reigstry=skill_reigstry,
@@ -96,15 +95,17 @@ async def test_agent_loop_with_tool_result_before_next_model_call(tmp_path):
         context=context,
         system_message=SystemMessage(content='system'),
         messages=messages,
-        tools=[ToolSpec(
-            name='echo',
-            description='Echo a value',
-            parameter_schema={
-                'type': 'object',
-                'properties': {'value': {'type': 'string'}},
-                'required': ['value'],
-            }
-        )],
+        tools=[
+            ToolSpec(
+                name='echo',
+                description='Echo a value',
+                parameter_schema={
+                    'type': 'object',
+                    'properties': {'value': {'type': 'string'}},
+                    'required': ['value'],
+                },
+            )
+        ],
         tool_handlers={'echo': echo},
     )
 

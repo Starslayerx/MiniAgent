@@ -1,11 +1,12 @@
 from typing import Protocol
 
 from .types import (
-    SystemMessage,
-    AssistantMessage,
     AgentMessage,
+    AssistantMessage,
+    SystemMessage,
     ToolSpec,
 )
+
 
 class ModelClient(Protocol):
     async def create_message(
@@ -14,7 +15,4 @@ class ModelClient(Protocol):
         system_message: SystemMessage,
         messages: list[AgentMessage],
         tools: list[ToolSpec] | None = None,
-    ) -> AssistantMessage:
-        ...
-
-
+    ) -> AssistantMessage: ...

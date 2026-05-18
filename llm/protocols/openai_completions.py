@@ -1,20 +1,22 @@
 import json
 from typing import Any
+
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from llm.types import (
     AgentMessage,
     AssistantMessage,
-    SystemMessage,
-    ToolSpec,
     AssistantPart,
-    TextBlock,
     MessagePart,
     ReasoningPart,
-    ToolCallPart,
+    SystemMessage,
+    TextBlock,
     TokenUsage,
+    ToolCallPart,
+    ToolSpec,
 )
+
 
 class OpenAICompletionsClient:
     def __init__(
@@ -58,14 +60,16 @@ class OpenAICompletionsClient:
                                     pending_reasoning = None
                                 completion_messages.append(entry)
                     elif part.type == 'tool_call':
-                        tool_calls.append({
-                            'id': part.tool_call_id,
-                            'type': 'function',
-                            'function': {
-                                'name': part.name,
-                                'arguments': json.dumps(part.arguments, ensure_ascii=False),
+                        tool_calls.append(
+                            {
+                                'id': part.tool_call_id,
+                                'type': 'function',
+                                'function': {
+                                    'name': part.name,
+                                    'arguments': json.dumps(part.arguments, ensure_ascii=False),
+                                },
                             }
-                        })
+                        )
                 if tool_calls:
                     entry = {
                         'role': message.role,
@@ -79,11 +83,13 @@ class OpenAICompletionsClient:
             elif message.role == 'user':
                 completion_messages.append({'role': message.role, 'content': message.content})
             elif message.role == 'tool':
-                completion_messages.append({
-                    'role': message.role,
-                    'tool_call_id': message.tool_call_id,
-                    'content': message.content,
-                })
+                completion_messages.append(
+                    {
+                        'role': message.role,
+                        'tool_call_id': message.tool_call_id,
+                        'content': message.content,
+                    }
+                )
 
         return completion_messages
 
@@ -94,14 +100,16 @@ class OpenAICompletionsClient:
     ) -> list[dict]:
         completion_tools = []
         for tool in tools:
-            completion_tools.append({
-                'type': 'function',
-                'function': {
-                    'name': tool.name,
-                    'description': tool.description,
-                    'parameters': tool.parameter_schema,
-                },
-            })
+            completion_tools.append(
+                {
+                    'type': 'function',
+                    'function': {
+                        'name': tool.name,
+                        'description': tool.description,
+                        'parameters': tool.parameter_schema,
+                    },
+                }
+            )
         return completion_tools
 
     def _to_assistant_message(
@@ -128,21 +136,27 @@ class OpenAICompletionsClient:
             parts.append(ReasoningPart(summary=[reasoning_content]))
 
         if msg.tool_calls is None:
-            parts.append(MessagePart(
-                role='assistant',
-                id=response.id,
-                content=[TextBlock(content=msg.content)]
-            ))
+            if msg.content:
+                parts.append(
+                    MessagePart(
+                        role='assistant',
+                        id=response.id,
+                        content=[TextBlock(content=msg.content)],
+                    )
+                )
         else:
             for tc in msg.tool_calls:
-                parts.append(ToolCallPart(
-                    tool_call_id=tc.id,
-                    name=tc.function.name,
-                    arguments=json.loads(tc.function.arguments),
-                ))
+                if tc.type != 'function':
+                    continue
+                parts.append(
+                    ToolCallPart(
+                        tool_call_id=tc.id,
+                        name=tc.function.name,
+                        arguments=json.loads(tc.function.arguments),
+                    )
+                )
 
         return AssistantMessage(parts=parts, usage=usage)
-
 
     async def create_message(
         self,

@@ -5,56 +5,57 @@ from core.settings import ProviderProtocol, Settings
 
 
 @pytest.fixture
-def settings():
+def settings() -> Settings:
 
-    return Settings(
-        provider='dashscope',
-        providers={
-            'dashscope': {
-                'api_key': 'sk-dashscope',
-                'default_protocol': 'openai_responses',
-                'default_model': 'qwen3.6',
-                'models_config': [
-                    {'name': 'qwen3.6', 'max_context_tokens': 256000},
-                    {'name': 'qwen3.5', 'max_context_tokens': 256000},
-                ],
-                'protocols': {
-                    'openai_responses': {
-                        'base_url': 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1',
-                        'extra_body': {'enable_thinking': True},
+    return Settings.model_validate(
+        {
+            'provider': 'dashscope',
+            'providers': {
+                'dashscope': {
+                    'api_key': 'sk-dashscope',
+                    'default_protocol': 'openai_responses',
+                    'default_model': 'qwen3.6',
+                    'models_config': [
+                        {'name': 'qwen3.6', 'max_context_tokens': 256000},
+                        {'name': 'qwen3.5', 'max_context_tokens': 256000},
+                    ],
+                    'protocols': {
+                        'openai_responses': {
+                            'base_url': 'https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1',
+                            'extra_body': {'enable_thinking': True},
+                        },
                     },
                 },
-
-            },
-            'deepseek': {
-                'api_key': 'sk-deepseek',
-                'default_protocol': 'openai_completions',
-                'default_model': 'deepseek-v4-flash',
-                'models_config': [
-                    {'name': 'deepseek-v4-flash', 'max_context_tokens': 1000000},
-                    {'name': 'deepseek-v4-pro', 'max_context_tokens': 1000000},
-                ],
-                'protocols': {
-                    'openai_completions': {
-                        'base_url': 'https://api.other.com',
-                        'extra_body': {'thinking': {'type': 'enabled'}},
-                        'reasoning_efforts': ['high', 'max'],
-                    },
-                    'anthropic_messages': {
-                        'base_url': 'https://api.other.com/anthropic',
-                        'max_tokens': 4096,
-                        'budget_tokens': 1024,
+                'deepseek': {
+                    'api_key': 'sk-deepseek',
+                    'default_protocol': 'openai_completions',
+                    'default_model': 'deepseek-v4-flash',
+                    'models_config': [
+                        {'name': 'deepseek-v4-flash', 'max_context_tokens': 1000000},
+                        {'name': 'deepseek-v4-pro', 'max_context_tokens': 1000000},
+                    ],
+                    'protocols': {
+                        'openai_completions': {
+                            'base_url': 'https://api.other.com',
+                            'extra_body': {'thinking': {'type': 'enabled'}},
+                            'reasoning_efforts': ['high', 'max'],
+                        },
+                        'anthropic_messages': {
+                            'base_url': 'https://api.other.com/anthropic',
+                            'max_tokens': 4096,
+                            'budget_tokens': 1024,
+                        },
                     },
                 },
             },
-        }
+        },
     )
 
 
-def test_get_provider_with_current_provider(settings):
+def test_get_provider_with_current_provider(settings: Settings) -> None:
     provider = settings.get_provider()
 
-    assert provider.api_key != 'sk-dashscope'
+    assert provider.api_key is not None
     assert provider.api_key.get_secret_value() == 'sk-dashscope'
     assert provider.default_protocol == 'openai_responses'
     assert provider.default_model == 'qwen3.6'
@@ -71,10 +72,10 @@ def test_get_provider_with_current_provider(settings):
     assert protocol.reasoning_efforts is None
 
 
-def test_get_provider_with_optional_provider(settings):
+def test_get_provider_with_optional_provider(settings: Settings) -> None:
     provider = settings.get_provider('deepseek')
 
-    assert provider.api_key != 'sk-deepseek'
+    assert provider.api_key is not None
     assert provider.api_key.get_secret_value() == 'sk-deepseek'
     assert provider.default_protocol == 'openai_completions'
     assert provider.default_model == 'deepseek-v4-flash'
@@ -96,31 +97,33 @@ def test_get_provider_with_optional_provider(settings):
     assert anthropic_protocol.budget_tokens == 1024
 
 
-def test_get_provider_unknown_provider(settings):
+def test_get_provider_unknown_provider(settings: Settings) -> None:
     with pytest.raises(ValueError, match='Unknown provider'):
         settings.get_provider('test_unknow')
 
 
-def test_provider_unknown_protocol():
+def test_provider_unknown_protocol() -> None:
     with pytest.raises(ValidationError) as exc_info:
-        Settings(
-            provider='unknow',
-            providers={
-                'unknow': {
-                    'api_key': 'sk-test',
-                    'default_protocol': 'unknow',
-                    'default_model': 'small-pickle',
-                    'models_config': [
-                        {'name': 'small-pickle', 'max_context_tokens': 1},
-                        {'name': 'big-pickle', 'max_context_tokens': 2},
-                    ],
-                    'protocols': {
-                        'openai_responses': {
-                            'base_url': 'https://example.com',
+        Settings.model_validate(
+            {
+                'provider': 'unknow',
+                'providers': {
+                    'unknow': {
+                        'api_key': 'sk-test',
+                        'default_protocol': 'unknow',
+                        'default_model': 'small-pickle',
+                        'models_config': [
+                            {'name': 'small-pickle', 'max_context_tokens': 1},
+                            {'name': 'big-pickle', 'max_context_tokens': 2},
+                        ],
+                        'protocols': {
+                            'openai_responses': {
+                                'base_url': 'https://example.com',
+                            },
                         },
-                    },
-                }
-            }
+                    }
+                },
+            },
         )
 
     errors = exc_info.value.errors()
@@ -128,24 +131,26 @@ def test_provider_unknown_protocol():
     assert errors[0]['type'] == 'enum'
 
 
-def test_provider_optional_fields_default_to_none():
-    settings = Settings(
-        provider='test_provider',
-        providers={
-            'test_provider': {
-                'api_key': 'sk-test',
-                'default_protocol': 'openai_responses',
-                'default_model': 'qwen3.6',
-                'models_config': [
-                    {'name': 'qwen3.6', 'max_context_tokens': None},
-                ],
-                'protocols': {
-                    'openai_responses': {
-                        'base_url': 'https://example.com',
+def test_provider_optional_fields_default_to_none() -> None:
+    settings = Settings.model_validate(
+        {
+            'provider': 'test_provider',
+            'providers': {
+                'test_provider': {
+                    'api_key': 'sk-test',
+                    'default_protocol': 'openai_responses',
+                    'default_model': 'qwen3.6',
+                    'models_config': [
+                        {'name': 'qwen3.6', 'max_context_tokens': None},
+                    ],
+                    'protocols': {
+                        'openai_responses': {
+                            'base_url': 'https://example.com',
+                        },
                     },
-                },
-            }
-        }
+                }
+            },
+        },
     )
 
     provider = settings.get_provider()
