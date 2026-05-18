@@ -83,7 +83,7 @@ async def read_item(
 
 Use `Annotated` for dependencies with `Depends()`.
 
-Unless asked not to, create a new type alias for the dependency to allow re-using it.
+Unless asked not to, create a new type alias for the dependency to allow reusing it.
 
 ```python
 from typing import Annotated

@@ -10,7 +10,7 @@ style = Style.from_dict(
         # assistant
         'assistant.prefix': 'ansigreen bold',
         'assistant.content': '',
-        # resoning
+        # reasoning
         'reasoning.prefix': 'ansibrightblack bold',
         'reasoning.content': 'ansibrightblack italic',
         # tool
