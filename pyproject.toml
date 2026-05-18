@@ -78,3 +78,16 @@ exclude = [
 ]
 venvPath = "."
 venv = ".venv"
+
+[tool.codespell]
+skip = [
+    ".git",
+    ".venv",
+    ".ruff_cache",
+    ".pytest_cache",
+    "__pycache__",
+    "uv.lock",
+    ".env",
+    ".env.*",
+]
+check-filenames = true
